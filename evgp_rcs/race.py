@@ -9,6 +9,8 @@ class RaceState(Enum):
 
 
 class Racer:
+    DATA_SIZE = 6 #TODO: not this?
+
     def __init__(self, team, ip_addr, socket):
         self.ip = ip_addr
         self.team = team
@@ -25,6 +27,12 @@ class Race:
     def __init__(self):
         self.racers = []
         self.state = RaceState.IN_GARAGE
+
+    def get_racer_count(self):
+        return len(self.racers)
+
+    def get_racer(self, index):
+        return self.racers[index]
 
     def addRacer(self, team, connection, client_address):
         r = Racer(team, client_address, connection)
