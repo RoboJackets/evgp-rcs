@@ -1,52 +1,45 @@
 import socket
 import select
 import yaml
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+from race import Race, Racer
 
-class RCSModel:
+
+class RCSModel(QtCore.QAbstractTableModel):
 
     def __init__(self):
-        self.race = Race()
-        self.standby = Race()
+        super(RCSModel, self).__init__()
+        self.active_race = Race()
+        self.standby_race = Race()
+        #TODO: disconnected or not connected racers from teams list should show
         self.teams_list = {}
 
-        # self.server = None
-        # self.SERVER_PORT = 80
-        # self.SERVER_BACKLOG = 10
-
         def load_team_list(self):
-            #TODO: load a map from text file of team name to IP
-            self.teams_list = {"team1": "123.123.123.123"}
+            #TODO: load a map from yaml file of team name to IP
+            self.teams_list = {
+                "team1": "123.123.123.123",
+                "team2": "456.456.456.456",
+                "team3": "789.789.789.789"
+                }
 
-        # def start_server(self):
-        #     self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     self.server.setblocking(0)
-        #     self.server.bind((socket.gethostname(), self.SERVER_PORT))
-        #     self.server.listen(self.SERVER_BACKLOG)
-        #
-        #
-        # def run_server(self):
-        #     while True:
-        #         inputs = [x for x in self.race.racers.socket]
-        #         outputs = inputs
-        #         inputs.append(self.server)
-        #         readable, writable, exceptional = select.select(
-        #             inputs, outputs, inputs)
-        #         for s in readable:
-        #             if s is server:
-        #                 connection, client_address = s.accept()
-        #                 connection.setblocking(0)
-        #                 team = self.teams_list[client_address]
-        #                 #TODO: signal/slot for new racer
-        #                 self.standby.addRacer(team, connection, client_address)
-        #             else:
-        #                 data = s.recv(1024)
-        #                 if data:
-        #                     message_queues[s].put(data)
-        #                     if s not in outputs:
-        #                         outputs.append(s)
-        #                 else:
-        #                     if s in outputs:
-        #                         outputs.remove(s)
-        #                     inputs.remove(s)
-        #                     s.close()
-        #                     self.race.removeRacer()
+        def data(self, index, role=QtCore.Qt.DisplayRole):
+            if role == Qt.DisplayRole:
+                # data is tabled as rows active followed by standy
+                # rows are filled with racer data (see race.py definition)
+                r = index.row()
+                c = index.column()
+                if (r < len(self.active_race)):
+                    #active racers
+                    return self.active_race[index.row()].index(c)
+                else:
+                    return self.standby_race[index.row()].index(c)
+        def rowCount(self, parent=QtCore.QModelIndex()):
+            return len(self.active_race) + len(self.standby_race)
+        def columnCount(self, parent=QtCore.QModelIndex()):
+            if self.active_race:
+                return len(self.active_race[0])
+            elif self.self.standby_race:
+                return len(self.self.standby_race[0])
+            else:
+                return 0

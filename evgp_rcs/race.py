@@ -17,6 +17,9 @@ class Racer:
         self.last_response = RaceState.IN_GARAGE
         self.is_errored = False
 
+    def index(self, idx):
+        return [self.ip, self.team, self.socket, self.state, self.last_response, self.is_errored][idx]
+
 
 class Race:
     def __init__(self):
