@@ -2,8 +2,9 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.Qt import QSortFilterProxyModel
-from PyQt5.QtWidgets import QGridLayout, QGroupBox
+from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QPushButton
 from rcsmodel import RCSModel
+from race import RaceState
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -32,6 +33,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.proxyModel.setSourceModel(self.model)
         self.tableFiltered = QtWidgets.QTableView()
         self.tableFiltered.setModel(self.proxyModel)
+        self.tableFiltered.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContents)
         # self.proxyModel.setFilterKeyColumn(1)
         # self.proxyModel.setFilterFixedString("3")
         layout.addWidget(self.tableFiltered, 0, 1)
@@ -41,7 +44,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.horizontalGroupBox = QGroupBox("Grid")
         self.horizontalGroupBox.setLayout(layout)
+
+        verticalBoxLayout = QVBoxLayout()
+        start_race_button = QPushButton("START RACE")
+        start_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GREEN_GREEN))
+        verticalBoxLayout.addWidget(start_race_button)
+        layout.addLayout(verticalBoxLayout, 0, 2)
+
+
+
+
         self.setCentralWidget(self.horizontalGroupBox)
+
+    def race_state_change_callback(self, state):
+        self.model.race_state_change(state)
 
 
 app=QtWidgets.QApplication(sys.argv)

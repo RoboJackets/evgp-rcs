@@ -9,7 +9,7 @@ class RaceState(Enum):
 
 
 class Racer:
-    DATA_SIZE = 6 #TODO: not this?
+    DATA_SIZE = 5 #TODO: not this?
 
     def __init__(self, team, ip_addr, socket):
         self.ip = ip_addr
@@ -19,9 +19,13 @@ class Racer:
         self.last_response = RaceState.IN_GARAGE
         self.is_errored = False
 
+    #USED ONLY FOR PYQT DISPLAY
     def index(self, idx):
-        return [self.ip, self.team, self.socket, self.state, self.last_response, self.is_errored][idx]
+        return [self.ip, self.team, self.state.name, self.last_response.name, self.is_errored][idx]
 
+    def set_state(self, state):
+        self.state = state
+        #TODO: EMIT SIGNAL for TCP server?
 
 class Race:
     def __init__(self):
@@ -38,3 +42,9 @@ class Race:
         r = Racer(team, client_address, connection)
         self.racers.append(r)
         print("Accepted connection from {0} at {1}".format(team, client_address))
+
+    def race_state_change(self, state):
+        #TODO: some logic around ensuring proper state flow
+        for i in range(len(self.racers)):
+            self.state = state
+            self.racers[i].set_state(state)

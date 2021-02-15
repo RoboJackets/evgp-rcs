@@ -43,3 +43,9 @@ class RCSModel(QtCore.QAbstractTableModel):
             return Racer.DATA_SIZE
         else:
             return 0
+
+    def race_state_change(self, state):
+        self.active_race.race_state_change(state)
+        modelTopLeftIndex = self.index(0,2) #TODO: not magic number
+        modelBottomRightIndex = self.index(self.active_race.get_racer_count() - 1, 2) #TODO: not magic number
+        self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
