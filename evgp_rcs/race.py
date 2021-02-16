@@ -9,7 +9,13 @@ class RaceState(Enum):
 
 
 class Racer:
+    #USED ONLY FOR PYQT DISPLAY
     DATA_SIZE = 5 #TODO: not this?
+    IP = 0
+    TEAM = 1
+    STATE = 2
+    LAST_RESPONSE = 3
+    IS_ERRORED = 4 #TODO: better define by disconnection
 
     def __init__(self, team, ip_addr, socket):
         self.ip = ip_addr
@@ -38,10 +44,15 @@ class Race:
     def get_racer(self, index):
         return self.racers[index]
 
-    def addRacer(self, team, connection, client_address):
+    def createNewRacer(self, team, connection, client_address):
         r = Racer(team, client_address, connection)
         self.racers.append(r)
-        print("Accepted connection from {0} at {1}".format(team, client_address))
+
+    def addRacer(self, newRacer):
+        self.racers.append(newRacer)
+
+    def removeRacer(self, index):
+        return self.racers.pop(index)
 
     def race_state_change(self, state):
         #TODO: some logic around ensuring proper state flow

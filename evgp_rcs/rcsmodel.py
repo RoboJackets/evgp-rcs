@@ -1,7 +1,7 @@
 import socket
 import select
 import yaml
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
 from race import Race, Racer
 
@@ -35,6 +35,10 @@ class RCSModel(QtCore.QAbstractTableModel):
             else:
                 return self.standby_race.get_racer(r - self.active_race.get_racer_count()).index(c)
 
+        if role == Qt.BackgroundRole:
+            if index.row() > self.active_race.get_racer_count() - 1:
+                return QtGui.QColor(190, 190, 190)
+
     def rowCount(self, parent=QtCore.QModelIndex()):
         return self.active_race.get_racer_count() + self.standby_race.get_racer_count()
 
@@ -46,6 +50,24 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     def race_state_change(self, state):
         self.active_race.race_state_change(state)
-        modelTopLeftIndex = self.index(0,2) #TODO: not magic number
-        modelBottomRightIndex = self.index(self.active_race.get_racer_count() - 1, 2) #TODO: not magic number
+        modelTopLeftIndex = self.index(0,Racer.STATE)
+        modelBottomRightIndex = self.index(self.active_race.get_racer_count() - 1, Racer.STATE)
         self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
+
+    def move_racer(self, index, race1, race2):
+        r = race1.removeRacer(index)
+        race2.addRacer(r)
+
+    def move_to_active_race(self, index):
+        if index > self.active_race.get_racer_count() - 1:
+            self.move_racer(index - self.active_race.get_racer_count(), self.standby_race, self.active_race)
+            #modelTopLeftIndex = self.index(self.active_race.get_racer_count() - 1,0)
+            #modelBottomRightIndex = self.index(self.active_race.get_racer_count() + self.standby_race.get_racer_count() - 1, Racer.DATA_SIZE)
+
+            modelTopLeftIndex = self.index(0,0)
+            modelBottomRightIndex = self.index(3, Racer.DATA_SIZE)
+            self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
+        else:
+            print("Racer already in the active race")
+    def move_to_standby_race(self, index):
+        pass
