@@ -6,6 +6,9 @@ class RaceState(Enum):
     GREEN_GREEN = "GREEN_GREEN"
     RED_FLAG = "RED_FLAG"
     RED_RED = "RED_RED"
+    
+    def __str__(self):
+        return str(self.value)
 
 
 class Racer:

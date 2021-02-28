@@ -3,7 +3,7 @@ import select
 import yaml
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
-from race import Race, Racer
+from race import Race, Racer, RaceState
 
 
 class RCSModel(QtCore.QAbstractTableModel):
@@ -14,13 +14,15 @@ class RCSModel(QtCore.QAbstractTableModel):
         self.standby_race = Race()
         #TODO: disconnected or not connected racers from teams list should show
         self.teams_list = {}
+        self.load_team_list()
 
     def load_team_list(self):
         #TODO: load a map from yaml file of team name to IP
         self.teams_list = {
-            "team1": "123.123.123.123",
-            "team2": "456.456.456.456",
-            "team3": "789.789.789.789"
+            "123.123.123.123": "team1",
+            "456.456.456.456": "team2",
+            "789.789.789.789": "team3",
+            "127.0.0.1": "team4"
             }
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
@@ -71,3 +73,23 @@ class RCSModel(QtCore.QAbstractTableModel):
             print("Racer already in the active race")
     def move_to_standby_race(self, index):
         pass
+
+    @QtCore.pyqtSlot(str)
+    def new_connection_handler(self, ip):
+        team = self.teams_list[ip]
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount() + 1)
+        self.standby_race.createNewRacer(team, None, ip)
+        self.endInsertRows()
+
+    #TODO: lost connection handler
+
+    @QtCore.pyqtSlot(str, RaceState)
+    def new_response_handler(self, ip, response):
+        for i in range(len(self.active_race.racers)): #TODO: ditch the whole Race class design
+            if self.active_race.racers[i].ip == ip:
+                self.active_race.racers[i].last_response = response
+                return
+        for i in range(len(self.standby_race.racers)):
+            if self.standby_race.racers[i].ip == ip:
+                self.standby_race.racers[i].last_response = response
+                return
