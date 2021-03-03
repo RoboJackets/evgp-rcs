@@ -1,5 +1,4 @@
 import socket
-import select
 import yaml
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
@@ -77,11 +76,26 @@ class RCSModel(QtCore.QAbstractTableModel):
     @QtCore.pyqtSlot(str)
     def new_connection_handler(self, ip):
         team = self.teams_list[ip]
-        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount() + 1)
+        self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
         self.standby_race.createNewRacer(team, None, ip)
         self.endInsertRows()
 
-    #TODO: lost connection handler
+    @QtCore.pyqtSlot(str)
+    def lost_connection_handler(self, ip):
+        for i in range(len(self.active_race.racers)): #TODO: ditch the whole Race class design
+            if self.active_race.racers[i].ip == ip:
+                self.beginRemoveRows(QtCore.QModelIndex(), i, i)
+                self.active_race.removeRacer(i)
+                self.endRemoveRows()
+                print(f"Lost connection to active racer team {self.teams_list[ip]}") #TODO: report an error if in active race!
+                return
+        for i in range(len(self.standby_race.racers)): #TODO: ditch the whole Race class design
+            if self.standby_race.racers[i].ip == ip:
+                self.beginRemoveRows(QtCore.QModelIndex(), i + len(self.active_race.racers), i + len(self.active_race.racers))
+                self.standby_race.removeRacer(i)
+                self.endRemoveRows()
+                return
+
 
     @QtCore.pyqtSlot(str, RaceState)
     def new_response_handler(self, ip, response):

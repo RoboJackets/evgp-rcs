@@ -27,6 +27,7 @@ class TCPServer(QObject):
 
 
     def stop(self):
+        print("Attempting to stop server")
         self.continue_run = False
 
     def on_race_state_change(self, ip, newState): #TODO: check speed of handling a "go" as individual events
@@ -52,7 +53,7 @@ class TCPServer(QObject):
 
     def remove_lost_client(self, client):
         addr = self.connection_to_addr[client]
-        self.connections.remove(client) #TODO: fix bug with client not in list if rapidly connects and disconnects
+        self.connections.remove(client)
         del self.states[addr]
         del self.responses[addr]
         self.lost_connection.emit(addr)
@@ -62,7 +63,6 @@ class TCPServer(QObject):
         # try:
         self.start_server()
         while self.continue_run:
-            #print(self.connection_to_addr)
             inputs = self.connections.copy()
             inputs.append(self.server)
             readable, writable, exceptional = select.select(
@@ -88,6 +88,10 @@ class TCPServer(QObject):
                             pass #TODO: something
                     except OSError:
                         self.remove_lost_client(s)
+                        try:
+                            writable.remove(s)
+                        except ValueError:
+                            pass
 
             for s in writable:
                 #TODO: some time processing so we don't send repeat signal too fast
