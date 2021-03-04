@@ -15,6 +15,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.table = QtWidgets.QTableView()
         self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.table.setSelectionMode(QtWidgets.QTableView.SingleSelection)
         self.table.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
 
@@ -42,6 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tableFiltered.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
         self.tableFiltered.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.tableFiltered.setSelectionMode(QtWidgets.QTableView.SingleSelection)
         # self.proxyModel.setFilterKeyColumn(1)
         # self.proxyModel.setFilterFixedString("3")
         layout.addWidget(self.tableFiltered, 0, 1)
@@ -78,9 +80,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model.race_state_change(state)
 
     def move_to_active_race(self):
-        index = self.table.selectionModel().selectedRows()[0].row() #TODO: handle no selection
-        self.model.move_to_active_race(index)
-        self.table.selectionModel().clearSelection()
+        if (self.table.selectionModel().selectedRows()):
+            index = self.table.selectionModel().selectedRows()[0].row()
+            self.model.move_to_active_race(index)
+            self.table.selectionModel().clearSelection()
 
     def start_server(self):
         #TODO: handle address in use (server just shut down)
