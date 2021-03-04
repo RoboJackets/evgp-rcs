@@ -27,11 +27,12 @@ class TCPServer(QObject):
 
 
     def stop(self):
-        print("Attempting to stop server")
+        print("Requesting server shutdown")
         self.continue_run = False
 
     def on_race_state_change(self, ip, newState): #TODO: check speed of handling a "go" as individual events
         self.states[ip] = newState
+        print(f"{ip} state changed to {newState}")
 
     def start_server(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

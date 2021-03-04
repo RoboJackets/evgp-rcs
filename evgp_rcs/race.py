@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal, QObject
 
 from enum import Enum
 class RaceState(Enum):
@@ -6,12 +7,15 @@ class RaceState(Enum):
     GREEN_GREEN = "GREEN_GREEN"
     RED_FLAG = "RED_FLAG"
     RED_RED = "RED_RED"
-    
+
     def __str__(self):
         return str(self.value)
 
 
-class Racer:
+class Racer(QObject):
+    #TODO: emittting signals has to happen at rcsmodel level so it can be conencted to server
+    state_changed = pyqtSignal(str, RaceState) #ip of racer as string, new state as RaceState
+
     #USED ONLY FOR PYQT DISPLAY
     DATA_SIZE = 5 #TODO: not this?
     IP = 0
@@ -21,6 +25,7 @@ class Racer:
     IS_ERRORED = 4 #TODO: better define by disconnection
 
     def __init__(self, team, ip_addr, socket):
+        QObject.__init__(self, parent=None)
         self.ip = ip_addr
         self.team = team
         self.socket = socket
@@ -35,6 +40,7 @@ class Racer:
     def set_state(self, state):
         self.state = state
         #TODO: EMIT SIGNAL for TCP server?
+        self.state_changed.emit(self.ip, self.state)
 
 class Race:
     def __init__(self):

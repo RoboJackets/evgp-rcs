@@ -66,7 +66,7 @@ class RCSModel(QtCore.QAbstractTableModel):
             #modelBottomRightIndex = self.index(self.active_race.get_racer_count() + self.standby_race.get_racer_count() - 1, Racer.DATA_SIZE)
 
             modelTopLeftIndex = self.index(0,0)
-            modelBottomRightIndex = self.index(3, Racer.DATA_SIZE)
+            modelBottomRightIndex = self.index(self.rowCount() - 1, Racer.DATA_SIZE)
             self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
         else:
             print("Racer already in the active race")
