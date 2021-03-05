@@ -19,11 +19,11 @@ sock.connect(server_address)
 
 
 
-state = "$GREEN_GREEN;"
+state = "$IN_GARAGE;"#"$GREEN_GREEN;"
 
 try:
     # Send data
-    message = "$GREEN_GREEN;"
+    message = state
     print(f'sending {message}')
     sock.sendall(message.encode('utf-8'))
     while True:
