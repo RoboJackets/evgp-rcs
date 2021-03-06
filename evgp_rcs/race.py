@@ -12,59 +12,30 @@ class RaceState(Enum):
         return str(self.value)
 
 
-class Racer(QObject):
-    #TODO: emittting signals has to happen at rcsmodel level so it can be conencted to server
-    state_changed = pyqtSignal(str, RaceState) #ip of racer as string, new state as RaceState
+class Racer:
 
     #USED ONLY FOR PYQT DISPLAY
-    DATA_SIZE = 5 #TODO: not this?
+    DATA_SIZE = 6 #TODO: not this?
     IP = 0
     TEAM = 1
-    STATE = 2
-    LAST_RESPONSE = 3
-    IS_ERRORED = 4 #TODO: better define by disconnection
+    IS_CONNECTED = 2
+    STATE = 3
+    LAST_RESPONSE = 4
+    ERROR = 5 #TODO: better define by disconnection
 
-    def __init__(self, team, ip_addr, socket):
-        QObject.__init__(self, parent=None)
+    HEADER_LABELS = ["IP", "Team", "Connected", "State", "Last Response", "Error"]
+
+    def __init__(self, team, ip_addr):
         self.ip = ip_addr
         self.team = team
-        self.socket = socket
+        self.is_connected = False
         self.state = RaceState.IN_GARAGE
         self.last_response = RaceState.IN_GARAGE
-        self.is_errored = False
+        self.error = None
 
     #USED ONLY FOR PYQT DISPLAY
     def index(self, idx):
-        return [self.ip, self.team, self.state.name, self.last_response.name, self.is_errored][idx]
+        return [self.ip, self.team, self.is_connected, self.state.name, self.last_response.name, self.error][idx]
 
     def set_state(self, state):
         self.state = state
-        #TODO: EMIT SIGNAL for TCP server?
-        self.state_changed.emit(self.ip, self.state)
-
-class Race:
-    def __init__(self):
-        self.racers = []
-        self.state = RaceState.IN_GARAGE
-
-    def get_racer_count(self):
-        return len(self.racers)
-
-    def get_racer(self, index):
-        return self.racers[index]
-
-    def createNewRacer(self, team, connection, client_address):
-        r = Racer(team, client_address, connection)
-        self.racers.append(r)
-
-    def addRacer(self, newRacer):
-        self.racers.append(newRacer)
-
-    def removeRacer(self, index):
-        return self.racers.pop(index)
-
-    def race_state_change(self, state):
-        #TODO: some logic around ensuring proper state flow
-        for i in range(len(self.racers)):
-            self.state = state
-            self.racers[i].set_state(state)

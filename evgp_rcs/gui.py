@@ -20,11 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QAbstractScrollArea.AdjustToContents)
 
         self.model = RCSModel()
-        #TODO: load based on server connections
-        self.model.active_race.createNewRacer("team1", None, "123.123.123.123")
-        self.model.active_race.createNewRacer("team2", None, "456.456.456.456")
-        self.model.standby_race.createNewRacer("team3", None, "300.300.300.300")
-        ##
+        #self.model.setHorizontalHeaderLabels(["hello","hellp"])
         self.table.setModel(self.model)
 
         layout = QGridLayout() #TODO: better layout
@@ -86,6 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.table.selectionModel().clearSelection()
 
     def start_server(self):
+        #TODO: handle this doesn't work to start, stop, and start again
         #TODO: handle address in use (server just shut down)
         if not self.is_server_started:
             self.is_server_started = True

@@ -76,6 +76,7 @@ class TCPServer(QObject):
                     self.connections.append(connection)
                     self.connection_to_addr[connection] = client_address[0]
                     self.states[client_address[0]] = RaceState.IN_GARAGE
+                    self.responses[client_address[0]] = RaceState.IN_GARAGE
                     print(f"accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
                     self.new_connection.emit(client_address[0]) #TODO: handle unknown connections just in case
                 else:
@@ -111,7 +112,7 @@ class TCPServer(QObject):
 
 
     def process_message(self, ip, msg):
-        #TODO: handle if a full message doesn't come at once ("unlikely")
+        #TODO: handle if a full message doesn't come at once, saving things after ; for next time around?
         #TODO: handle multiple messages at once -- I think just grab the last?
         matches = re.findall('\$([^\$\s]+?);', msg) #splits "$something;"" to "something"
 
