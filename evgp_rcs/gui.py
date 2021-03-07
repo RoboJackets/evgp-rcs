@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.Qt import QSortFilterProxyModel
 from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QPushButton
-from rcsmodel import RCSModel
+from rcsmodel import RCSModel, RCSSortFilterProxyModel
 from race import RaceState
 from tcpserver import TCPServer
 
@@ -20,7 +20,6 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QAbstractScrollArea.AdjustToContents)
 
         self.model = RCSModel()
-        #self.model.setHorizontalHeaderLabels(["hello","hellp"])
         self.table.setModel(self.model)
 
         layout = QGridLayout() #TODO: better layout
@@ -30,18 +29,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         layout.addWidget(self.table, 0, 0)
 
-
-        self.proxyModel = QSortFilterProxyModel()
+        self.proxyModel = RCSSortFilterProxyModel()
         self.proxyModel.setDynamicSortFilter(True)
         self.proxyModel.setSourceModel(self.model)
+
         self.tableFiltered = QtWidgets.QTableView()
         self.tableFiltered.setModel(self.proxyModel)
         self.tableFiltered.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
         self.tableFiltered.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.tableFiltered.setSelectionMode(QtWidgets.QTableView.SingleSelection)
-        # self.proxyModel.setFilterKeyColumn(1)
-        # self.proxyModel.setFilterFixedString("3")
         layout.addWidget(self.tableFiltered, 0, 1)
 
 
@@ -57,6 +54,9 @@ class MainWindow(QtWidgets.QMainWindow):
         move_to_active_race_button = QPushButton("Move to Active Race")
         move_to_active_race_button.clicked.connect(self.move_to_active_race)
         verticalBoxLayout.addWidget(move_to_active_race_button)
+        remove_from_active_race_button = QPushButton("Remove from Active Race")
+        remove_from_active_race_button.clicked.connect(self.remove_from_active_race)
+        verticalBoxLayout.addWidget(remove_from_active_race_button)
 
 
         layout.addLayout(verticalBoxLayout, 0, 2)
@@ -78,8 +78,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def move_to_active_race(self):
         if (self.table.selectionModel().selectedRows()):
             index = self.table.selectionModel().selectedRows()[0].row()
-            self.model.move_to_active_race(index)
-            self.table.selectionModel().clearSelection()
+            changed = self.model.move_to_active_race(index)
+            if changed:
+                self.table.selectionModel().clearSelection()
+
+    def remove_from_active_race(self):
+        if (self.table.selectionModel().selectedRows()):
+            index = self.table.selectionModel().selectedRows()[0].row()
+            changed = self.model.move_to_standby_race(index)
+            if changed:
+                self.table.selectionModel().clearSelection()
 
     def start_server(self):
         #TODO: handle this doesn't work to start, stop, and start again

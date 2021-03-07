@@ -2,6 +2,7 @@ import socket
 import yaml
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt
+from PyQt5.Qt import QSortFilterProxyModel
 from race import Racer, RaceState
 
 
@@ -74,8 +75,14 @@ class RCSModel(QtCore.QAbstractTableModel):
         r = race1.pop(index)
         race2.append(r)
 
+    #returns true or false if anything actually moved
     def move_to_active_race(self, index):
         if index > len(self.active_race) - 1:
+            self.layoutAboutToBeChanged.emit() #TODO: see if this is right
+
+            # if  not self.standby_race[index].is_connected: #TODO: ENABLE AFTER TESTING
+            #     print("Racer not connected!")
+            #     return
             self.move_racer(index - len(self.active_race), self.standby_race, self.active_race)
             #modelTopLeftIndex = self.index(self.active_race.get_racer_count() - 1,0)
             #modelBottomRightIndex = self.index(self.active_race.get_racer_count() + self.standby_race.get_racer_count() - 1, Racer.DATA_SIZE)
@@ -83,33 +90,51 @@ class RCSModel(QtCore.QAbstractTableModel):
             modelTopLeftIndex = self.index(0,0)
             modelBottomRightIndex = self.index(self.rowCount() - 1, Racer.DATA_SIZE)
             self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
+
+            self.layoutChanged.emit() #TODO: see if this is right
+            return True
         else:
             print("Racer already in the active race")
+            return False
 
+    #returns true or false if anything actually moved
     def move_to_standby_race(self, index):
         if index < len(self.active_race):
-            self.move_racer(index - len(self.active_race), self.standby_race, self.active_race)
-            #modelTopLeftIndex = self.index(self.active_race.get_racer_count() - 1,0)
+            self.layoutAboutToBeChanged.emit() #TODO: see if this is right
+
+            self.move_racer(index - len(self.active_race), self.active_race, self.standby_race)
+            #modelTopLeftIndex = self.index(len(self.active_race.get_racer_count() - 1,0)
             #modelBottomRightIndex = self.index(self.active_race.get_racer_count() + self.standby_race.get_racer_count() - 1, Racer.DATA_SIZE)
 
             modelTopLeftIndex = self.index(0,0)
             modelBottomRightIndex = self.index(self.rowCount() - 1, Racer.DATA_SIZE)
             self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
+
+            self.layoutChanged.emit() #TODO: see if this is right
+            return True
         else:
-            print("Racer already in the active race")
+            print("Racer not in active race")
+            return False
 
     @QtCore.pyqtSlot(str)
     def new_connection_handler(self, ip):
         team = self.teams_list[ip]
+        for i in range(len(self.active_race)):
+            r = self.active_race[i]
+            if r.ip == ip:
+                r.is_connected = True
+                modelTopLeftIndex = self.index(i ,Racer.IS_CONNECTED)
+                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                return
+
         for i in range(len(self.standby_race)):
             r = self.standby_race[i]
             if r.ip == ip:
                 r.is_connected = True
-                modelTopLeftIndex = self.index(len(self.active_race)+i,Racer.IS_CONNECTED)
+                modelTopLeftIndex = self.index(len(self.active_race)+i, Racer.IS_CONNECTED)
                 self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
                 return
 
-#TODO: everything below this
     @QtCore.pyqtSlot(str)
     def lost_connection_handler(self, ip):
         for i in range(len(self.active_race)):
@@ -140,3 +165,35 @@ class RCSModel(QtCore.QAbstractTableModel):
             if self.standby_race[i].ip == ip:
                 self.standby_race[i].last_response = response
                 return
+
+
+
+#TODO: a way to use this to filter both models
+class RCSSortFilterProxyModel(QSortFilterProxyModel):
+
+    def __init__(self, parent=None):
+        super(QSortFilterProxyModel, self).__init__(parent=parent)
+
+        self.typeFilter = True
+
+    def filterAcceptsRow(self, sourceRow, sourceParent):
+        # idx = self.sourceModel().index(sourceRow, Racer.IS_CONNECTED) #TODO: remove after testing
+        # return not self.sourceModel().data(idx)
+        return sourceRow >= len(self.sourceModel().active_race)
+
+    def lessThan(self, left, right):
+        #sort by connected then IP
+        leftIdx = self.index(left.row(), Racer.IS_CONNECTED)
+        rightIdx = self.index(right.row(), Racer.IS_CONNECTED)
+        leftConnection = self.sourceModel().data(leftIdx)
+        rightConnection = self.sourceModel().data(rightIdx)
+        if leftConnection and not rightConnection:
+            return False
+        elif rightConnection and not leftConnection:
+            return True
+        else:
+            leftIdx = self.index(left.row(), Racer.TEAM)
+            rightIdx = self.index(right.row(), Racer.TEAM)
+            leftTeam = self.sourceModel().data(leftIdx)
+            rightTeam = self.sourceModel().data(rightIdx)
+            return leftTeam < rightTeam
