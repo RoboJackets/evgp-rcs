@@ -63,6 +63,18 @@ class RCSModel(QtCore.QAbstractTableModel):
             else:
                 return QtCore.QVariant(None)
 
+    #TODO: should this be QtCore.pyqtSlot(int, str)
+    def team_state_change(self, tableIdx, state):
+        if (tableIdx < len(self.active_race)):
+            #active racer
+            self.active_race[tableIdx].state = state
+
+        else:
+            #TODO: should standby racers be allowed to be in GO states?
+            self.standby_race[tableIdx].state = state
+
+        modelTopLeftIndex = self.index(tableIdx,Racer.STATE)
+        self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
 
     def race_state_change(self, state):
         for r in self.active_race:
