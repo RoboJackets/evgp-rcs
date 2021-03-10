@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
 from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton
 from rcsmodel import RCSModel, RCSSortFilterProxyModel
@@ -43,6 +43,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         # self.tableFiltered.setSortingEnabled(True) #TODO: this breaks everything
+
+        self.selectedIndex = None
+        self.tableFiltered.selectionModel().selectionChanged.connect(self.filtered_table_selection_handler)
+        self.table.selectionModel().selectionChanged.connect(self.main_table_selection_handler)
 
 
 
@@ -108,18 +112,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model.race_state_change(state)
 
     def move_to_active_race(self):
-        if (self.table.selectionModel().selectedRows()):
-            index = self.table.selectionModel().selectedRows()[0].row()
-            changed = self.model.move_to_active_race(index)
+        if self.selectedIndex is not None:
+            changed = self.model.move_to_active_race(self.selectedIndex)
             if changed:
-                self.table.selectionModel().clearSelection()
+                self.clearAllSelections()
 
     def remove_from_active_race(self):
-        if (self.table.selectionModel().selectedRows()):
-            index = self.table.selectionModel().selectedRows()[0].row()
-            changed = self.model.move_to_standby_race(index)
+        if self.selectedIndex is not None:
+            changed = self.model.move_to_standby_race(self.selectedIndex)
             if changed:
-                self.table.selectionModel().clearSelection()
+                self.clearAllSelections()
 
     def start_server(self):
         #TODO: handle this doesn't work to start, stop, and start again
@@ -142,6 +144,24 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.is_server_started:
             self.server.stop() #TODO: make this a signal so it works
             self.is_server_started = False
+
+    @QtCore.pyqtSlot(QItemSelection, QItemSelection)
+    def filtered_table_selection_handler(self, filterTableSelection, filterTableDeselected):
+        if filterTableSelection.indexes():
+            self.table.selectionModel().clearSelection()
+            self.selectedIndex = self.proxyModel.mapToSource(filterTableSelection.indexes()[0]).row()
+
+    @QtCore.pyqtSlot(QItemSelection, QItemSelection)
+    def main_table_selection_handler(self, tableSelection, tableDeselected):
+        if tableSelection.indexes():
+            self.tableFiltered.selectionModel().clearSelection()
+            #self.selection = self.proxyModel.mapToSource(tableSelection.indexes()) #TODO: main table should be proxy
+            self.selectedIndex = tableSelection.indexes()[0].row()
+
+    def clearAllSelections(self):
+        self.table.selectionModel().clearSelection()
+        self.tableFiltered.selectionModel().clearSelection()
+        self.selectedIndex = None
 
 
 app=QtWidgets.QApplication(sys.argv)
