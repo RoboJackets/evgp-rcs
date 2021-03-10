@@ -134,7 +134,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.server.new_connection.connect(self.model.new_connection_handler)
             self.server.lost_connection.connect(self.model.lost_connection_handler)
             self.server.new_response.connect(self.model.new_response_handler)
-            #TODO: server on race state change
+
+            self.model.team_state_change_signal.connect(self.server.on_race_state_change)
+
             self.server_thread = QThread()
             self.server.moveToThread(self.server_thread)
             self.server_thread.started.connect(self.server.run_server)
@@ -142,7 +144,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def stop_server(self):
         if self.is_server_started:
-            self.server.stop() #TODO: make this a signal so it works
+            self.server.stop() #TODO: make this a signal so it works. Also mutex?
             self.is_server_started = False
 
     @QtCore.pyqtSlot(QItemSelection, QItemSelection)

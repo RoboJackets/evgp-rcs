@@ -120,7 +120,7 @@ class TCPServer(QObject):
             last_msg = matches[-1]
             try:
                 new_state = RaceState(last_msg)
-                last_state = self.states[ip]
+                last_state = self.responses[ip]
                 if new_state != last_state: #only report changes to RCSModel
                     self.new_response.emit(ip, new_state)
                     self.responses[ip] = new_state

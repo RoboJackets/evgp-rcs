@@ -1,12 +1,14 @@
 import socket
 import yaml
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.Qt import QSortFilterProxyModel
 from race import Racer, RaceState
 
 
 class RCSModel(QtCore.QAbstractTableModel):
+
+    team_state_change_signal = pyqtSignal(str, RaceState) #ip of responder as string, response as RaceState
 
     def __init__(self):
         super(RCSModel, self).__init__()
@@ -63,22 +65,27 @@ class RCSModel(QtCore.QAbstractTableModel):
             else:
                 return QtCore.QVariant(None)
 
-    #TODO: should this be QtCore.pyqtSlot(int, str)
     def team_state_change(self, tableIdx, state):
+        ip = None
         if (tableIdx < len(self.active_race)):
             #active racer
             self.active_race[tableIdx].state = state
+            ip = self.active_race[tableIdx].ip
 
         else:
             #TODO: should standby racers be allowed to be in GO states?
             self.standby_race[tableIdx].state = state
+            ip = self.standby_race[tableIdx].ip
 
         modelTopLeftIndex = self.index(tableIdx,Racer.STATE)
         self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
 
+        self.team_state_change_signal.emit(ip, state)
+
     def race_state_change(self, state):
         for r in self.active_race:
             r.state = state
+            self.team_state_change_signal.emit(r.ip, state)
         modelTopLeftIndex = self.index(0,Racer.STATE)
         modelBottomRightIndex = self.index(len(self.active_race) - 1, Racer.STATE)
         self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
@@ -169,13 +176,18 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     @QtCore.pyqtSlot(str, RaceState)
     def new_response_handler(self, ip, response):
-        for i in range(len(self.active_race)): #TODO: ditch the whole Race class design
+        #TODO: check speed of this with 15 racers. Could have faster lookup
+        for i in range(len(self.active_race)):
             if self.active_race[i].ip == ip:
                 self.active_race[i].last_response = response
+                modelTopLeftIndex = self.index(i, Racer.LAST_RESPONSE)
+                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
                 return
         for i in range(len(self.standby_race)):
             if self.standby_race[i].ip == ip:
                 self.standby_race[i].last_response = response
+                modelTopLeftIndex = self.index(i, Racer.LAST_RESPONSE)
+                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
                 return
 
 
