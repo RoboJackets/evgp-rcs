@@ -27,6 +27,8 @@ split = 5
 states = ["$IN_GARAGE;", "$GREEN_GREEN;", "$RED_RED;"]
 selection = 0
 
+leftover_message = ""
+
 try:
     # Send data
     last_msg = None
@@ -38,12 +40,21 @@ try:
         data = sock.recv(256)
         amount_received = len(data)
         if amount_received > 0:
-            matches = re.findall('\$([^\$\s]+?);', data.decode('utf-8')) #splits "$something;"" to "something"
+            all_message_data = leftover_message + data.decode('utf-8')
+            matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;"" to "something"
+            last_end = max(all_message_data.rfind(";"),0)
+            last_start = max(all_message_data.rfind("$"),0)
+            if (last_end > last_start):
+                leftover_message = ""
+            else:
+                leftover_message = all_message_data[last_start:]
+
             if not matches:
+                print(leftover_message)
                 print(data.decode('utf-8')) #TODO: keep track of data that wasn't matched
             else:
                 msg = matches[-1]
-                print(msg)
+                #print(msg)
                 if msg != last_msg:
                     print(f"received {msg}")
                     last_msg = msg
