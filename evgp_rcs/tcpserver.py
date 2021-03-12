@@ -22,7 +22,8 @@ class TCPServer(QObject):
         self.continue_run = True
         self.connections = []
         self.states = {}
-        self.responses = {} #probably don't need after we report the response to the model
+        self.responses = {}
+        self.leftover_messages = {}
         self.connection_to_addr = {} #TODO: may need to run off (addr,port) or handle oddity if car tries to connect twice
 
 
@@ -77,6 +78,7 @@ class TCPServer(QObject):
                     self.connection_to_addr[connection] = client_address[0]
                     self.states[client_address[0]] = RaceState.IN_GARAGE
                     self.responses[client_address[0]] = RaceState.IN_GARAGE
+                    self.leftover_messages[client_address[0]] = ""
                     print(f"accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
                     self.new_connection.emit(client_address[0]) #TODO: handle unknown connections and double IP conenctions just in case
                 else:
@@ -114,7 +116,16 @@ class TCPServer(QObject):
     def process_message(self, ip, msg):
         #TODO: handle if a full message doesn't come at once, saving things after ; for next time around?
         #TODO: handle multiple messages at once -- I think just grab the last?
-        matches = re.findall('\$([^\$\s]+?);', msg) #splits "$something;"" to "something"
+        #TODO: make matches use START_CHAR and END_CHAR
+        all_message_data = self.leftover_messages[ip] + msg
+        matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;"" to "something"
+
+        last_start = max(all_message_data.rfind(self.START_CHAR),0)
+        last_end = max(all_message_data.rfind(self.END_CHAR),0)
+        if (last_end > last_start):
+            self.leftover_messages[ip] = ""
+        else:
+            self.leftover_messages[ip] = all_message_data[last_start:]
 
         if matches: #TODO: report error if effectively empty message?
             last_msg = matches[-1]

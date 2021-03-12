@@ -27,6 +27,8 @@ split = 5
 states = ["$IN_GARAGE;", "$GREEN_GREEN;", "$RED_RED;"]
 selection = 0
 
+msg_parts = ["$", "GREEN_", "GREEN",";", "$", "RED", "_", "RED;", "$GRID_ACTIVE;"]
+
 leftover_message = ""
 
 try:
@@ -65,6 +67,15 @@ try:
         #     selection += 1
         #     print(f'sending {message}')
         #     sock.sendall(message.encode('utf-8'))
+        #     start = time.time()
+
+
+        # send messages in parts
+        # if time.time() - start > split:
+        #     message = msg_parts[selection%len(msg_parts)]
+        #     print(f'sending {message}')
+        #     sock.sendall(message.encode('utf-8'))
+        #     selection += 1
         #     start = time.time()
 
 finally:
