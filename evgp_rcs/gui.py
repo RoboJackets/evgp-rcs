@@ -13,40 +13,46 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.is_server_started = False
 
-        self.table = QtWidgets.QTableView()
-        self.table.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
-        self.table.setSelectionMode(QtWidgets.QTableView.SingleSelection)
-        self.table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.AdjustToContents)
-
         self.model = RCSModel()
-        self.table.setModel(self.model)
 
         layout = QGridLayout() #TODO: better layout
         layout.setColumnStretch(0, 10)
         layout.setColumnStretch(1, 10)
 
 
-        layout.addWidget(self.table, 0, 0)
+        #FILTERED ACTIVE RACE TABLE
+        self.activeRaceProxyModel = RCSSortFilterProxyModel(True)
+        self.activeRaceProxyModel.setDynamicSortFilter(True)
+        self.activeRaceProxyModel.setSourceModel(self.model)
 
-        self.proxyModel = RCSSortFilterProxyModel()
-        self.proxyModel.setDynamicSortFilter(True)
-        self.proxyModel.setSourceModel(self.model)
-
-        self.tableFiltered = QtWidgets.QTableView()
-        self.tableFiltered.setModel(self.proxyModel)
-        self.tableFiltered.setSizeAdjustPolicy(
+        self.activeRaceTable = QtWidgets.QTableView()
+        self.activeRaceTable.setModel(self.activeRaceProxyModel)
+        self.activeRaceTable.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
-        self.tableFiltered.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
-        self.tableFiltered.setSelectionMode(QtWidgets.QTableView.SingleSelection)
-        layout.addWidget(self.tableFiltered, 0, 1)
+        self.activeRaceTable.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.activeRaceTable.setSelectionMode(QtWidgets.QTableView.SingleSelection)
+        layout.addWidget(self.activeRaceTable, 0, 0)
 
 
-        # self.tableFiltered.setSortingEnabled(True) #TODO: this breaks everything
+        self.standbyRaceProxyModel = RCSSortFilterProxyModel(False)
+        self.standbyRaceProxyModel.setDynamicSortFilter(True)
+        self.standbyRaceProxyModel.setSourceModel(self.model)
+
+        self.standbyRaceTable = QtWidgets.QTableView()
+        self.standbyRaceTable.setModel(self.standbyRaceProxyModel)
+        self.standbyRaceTable.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.standbyRaceTable.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.standbyRaceTable.setSelectionMode(QtWidgets.QTableView.SingleSelection)
+        layout.addWidget(self.standbyRaceTable, 0, 1)
+
+
+
+        # self.standbyRaceTable.setSortingEnabled(True) #TODO: this breaks everything
 
         self.selectedIndex = None
-        self.tableFiltered.selectionModel().selectionChanged.connect(self.filtered_table_selection_handler)
-        self.table.selectionModel().selectionChanged.connect(self.main_table_selection_handler)
+        self.standbyRaceTable.selectionModel().selectionChanged.connect(self.standby_race_table_selection_handler)
+        self.activeRaceTable.selectionModel().selectionChanged.connect(self.active_race_table_selection_handler)
 
 
 
@@ -83,6 +89,9 @@ class MainWindow(QtWidgets.QMainWindow):
         start_race_button = QPushButton("START RACE")
         start_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GREEN_GREEN))
         hBox.addWidget(start_race_button)
+        gridActiveRaceButton = QPushButton("GRID ACTIVE RACE")
+        gridActiveRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.GRID_ACTIVE))
+        hBox.addWidget(gridActiveRaceButton)
         eStopRaceButton = QPushButton("E-STOP RACE")
         eStopRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_RED))
         hBox.addWidget(eStopRaceButton)
@@ -148,21 +157,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.is_server_started = False
 
     @QtCore.pyqtSlot(QItemSelection, QItemSelection)
-    def filtered_table_selection_handler(self, filterTableSelection, filterTableDeselected):
+    def standby_race_table_selection_handler(self, filterTableSelection, filterTableDeselected):
         if filterTableSelection.indexes():
-            self.table.selectionModel().clearSelection()
-            self.selectedIndex = self.proxyModel.mapToSource(filterTableSelection.indexes()[0]).row()
+            self.activeRaceTable.selectionModel().clearSelection()
+            self.selectedIndex = self.standbyRaceProxyModel.mapToSource(filterTableSelection.indexes()[0]).row()
 
     @QtCore.pyqtSlot(QItemSelection, QItemSelection)
-    def main_table_selection_handler(self, tableSelection, tableDeselected):
+    def active_race_table_selection_handler(self, tableSelection, tableDeselected):
         if tableSelection.indexes():
-            self.tableFiltered.selectionModel().clearSelection()
+            self.standbyRaceTable.selectionModel().clearSelection()
             #self.selection = self.proxyModel.mapToSource(tableSelection.indexes()) #TODO: main table should be proxy
             self.selectedIndex = tableSelection.indexes()[0].row()
 
     def clearAllSelections(self):
-        self.table.selectionModel().clearSelection()
-        self.tableFiltered.selectionModel().clearSelection()
+        self.activeRaceTable.selectionModel().clearSelection()
+        self.standbyRaceTable.selectionModel().clearSelection()
         self.selectedIndex = None
 
 

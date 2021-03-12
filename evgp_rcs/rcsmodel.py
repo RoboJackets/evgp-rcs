@@ -49,6 +49,9 @@ class RCSModel(QtCore.QAbstractTableModel):
             if index.row() > len(self.active_race) - 1:
                 return QtGui.QColor(190, 190, 190)
 
+        # if role == Qt.ToolTipRole: #SHOWS FULL TEXT ON HOVER
+        #     return self.data(index,role=Qt.DisplayRole)
+
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.active_race) + len(self.standby_race)
 
@@ -195,15 +198,18 @@ class RCSModel(QtCore.QAbstractTableModel):
 #TODO: a way to use this to filter both models
 class RCSSortFilterProxyModel(QSortFilterProxyModel):
 
-    def __init__(self, parent=None):
+    def __init__(self, filterAcceptsActive, parent=None):
         super(QSortFilterProxyModel, self).__init__(parent=parent)
 
-        self.typeFilter = True
+        self.filterAcceptsActive = filterAcceptsActive
 
     def filterAcceptsRow(self, sourceRow, sourceParent):
         # idx = self.sourceModel().index(sourceRow, Racer.IS_CONNECTED) #TODO: remove after testing
         # return not self.sourceModel().data(idx)
-        return sourceRow >= len(self.sourceModel().active_race)
+        if self.filterAcceptsActive:
+            return sourceRow < len(self.sourceModel().active_race)
+        else:
+            return sourceRow >= len(self.sourceModel().active_race)
 
     def lessThan(self, left, right):
         #sort by connected then IP

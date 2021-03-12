@@ -78,7 +78,7 @@ class TCPServer(QObject):
                     self.states[client_address[0]] = RaceState.IN_GARAGE
                     self.responses[client_address[0]] = RaceState.IN_GARAGE
                     print(f"accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
-                    self.new_connection.emit(client_address[0]) #TODO: handle unknown connections just in case
+                    self.new_connection.emit(client_address[0]) #TODO: handle unknown connections and double IP conenctions just in case
                 else:
                     try:
                         data = s.recv(1024)
