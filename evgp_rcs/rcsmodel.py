@@ -46,8 +46,7 @@ class RCSModel(QtCore.QAbstractTableModel):
                 return self.standby_race[r - len(self.active_race)].index(c)
 
         if role == Qt.BackgroundRole:
-            if index.row() > len(self.active_race) - 1:
-                return QtGui.QColor(190, 190, 190)
+            return self.decideRowColor(index)
 
         # if role == Qt.ToolTipRole: #SHOWS FULL TEXT ON HOVER
         #     return self.data(index,role=Qt.DisplayRole)
@@ -70,9 +69,9 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     def decideRowColor(self, index):
         r = index.row()
-        if data(self.index(r, Racer.IS_CONNECTED)):
+        if self.data(self.index(r, Racer.IS_CONNECTED)):
             #Connected
-            if data(self.index(r, Racer.STATE)) != data(self.index(r, Racer.LAST_RESPONSE)):
+            if self.data(self.index(r, Racer.STATE)) != self.data(self.index(r, Racer.LAST_RESPONSE)):
                 return QtGui.QColor(255, 100, 100)
         else:
             return QtGui.QColor(190, 190, 190)
