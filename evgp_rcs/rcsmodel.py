@@ -68,6 +68,16 @@ class RCSModel(QtCore.QAbstractTableModel):
             else:
                 return QtCore.QVariant(None)
 
+    def decideRowColor(self, index):
+        r = index.row()
+        if data(self.index(r, Racer.IS_CONNECTED)):
+            #Connected
+            if data(self.index(r, Racer.STATE)) != data(self.index(r, Racer.LAST_RESPONSE)):
+                return QtGui.QColor(255, 100, 100)
+        else:
+            return QtGui.QColor(190, 190, 190)
+
+
     def team_state_change(self, tableIdx, state):
         ip = None
         if (tableIdx < len(self.active_race)):
@@ -162,10 +172,7 @@ class RCSModel(QtCore.QAbstractTableModel):
         for i in range(len(self.active_race)):
             if self.active_race[i].ip == ip:
                 self.active_race[i].is_connected = False
-                self.move_to_standby_race(i)
                 modelTopLeftIndex = self.index(i, Racer.IS_CONNECTED)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
-                modelTopLeftIndex = self.index(len(self.standby_race), Racer.IS_CONNECTED)
                 self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
                 print(f"Lost connection to active racer team {self.teams_list[ip]}") #TODO: report an error if in active race!
                 return
