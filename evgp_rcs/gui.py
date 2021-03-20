@@ -113,7 +113,7 @@ class MainWindow(QtWidgets.QMainWindow):
         base_layout.addLayout(hBox, row, col)
 
     def team_state_change_callback(self, state):
-        if self.selectedIndex is not None::
+        if self.selectedIndex is not None:
             self.model.team_state_change(self.selectedIndex, state)
 
     def race_state_change_callback(self, state):
