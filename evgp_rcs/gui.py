@@ -86,12 +86,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def create_race_state_button_layout(self, base_layout, row, col):
         hBox = QHBoxLayout()
-        start_race_button = QPushButton("START RACE")
-        start_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GREEN_GREEN))
-        hBox.addWidget(start_race_button)
         gridActiveRaceButton = QPushButton("GRID ACTIVE RACE")
         gridActiveRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.GRID_ACTIVE))
         hBox.addWidget(gridActiveRaceButton)
+        start_race_button = QPushButton("START RACE")
+        start_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GREEN_GREEN))
+        hBox.addWidget(start_race_button)
+        red_flag_race_button = QPushButton("RED FLAG RACE")
+        red_flag_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_FLAG))
+        hBox.addWidget(red_flag_race_button)
         eStopRaceButton = QPushButton("E-STOP RACE")
         eStopRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_RED))
         hBox.addWidget(eStopRaceButton)
