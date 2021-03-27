@@ -79,12 +79,14 @@ class MainWindow(QtWidgets.QMainWindow):
         verticalBoxLayout.addWidget(stop_server_button)
 
 
-        self.create_race_state_button_layout(layout, 1, 0)
-        self.create_team_state_button_layout(layout, 1, 1)
+        race_state_layout = self.create_race_state_button_layout()
+        layout.addLayout(race_state_layout, 1, 0)
+        team_state_layout = self.create_team_state_button_layout()
+        layout.addLayout(team_state_layout, 1, 1)
 
         self.setCentralWidget(self.horizontalGroupBox)
 
-    def create_race_state_button_layout(self, base_layout, row, col):
+    def create_race_state_button_layout(self):
         hBox = QHBoxLayout()
         gridActiveRaceButton = QPushButton("GRID ACTIVE RACE")
         gridActiveRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.GRID_ACTIVE))
@@ -99,9 +101,9 @@ class MainWindow(QtWidgets.QMainWindow):
         eStopRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_RED))
         hBox.addWidget(eStopRaceButton)
 
-        base_layout.addLayout(hBox, row, col)
+        return hBox
 
-    def create_team_state_button_layout(self, base_layout, row, col):
+    def create_team_state_button_layout(self):
         hBox = QHBoxLayout()
         eStopTeamButton = QPushButton("E-STOP TEAM")
         eStopTeamButton.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_RED))
@@ -113,7 +115,7 @@ class MainWindow(QtWidgets.QMainWindow):
         inGarageTeamButton.clicked.connect(lambda: self.team_state_change_callback(RaceState.IN_GARAGE))
         hBox.addWidget(inGarageTeamButton)
 
-        base_layout.addLayout(hBox, row, col)
+        return hBox
 
     def team_state_change_callback(self, state):
         if self.selectedIndex is not None:
