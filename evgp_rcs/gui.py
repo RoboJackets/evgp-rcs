@@ -2,10 +2,12 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
-from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
 from rcsmodel import RCSModel, RCSSortFilterProxyModel
 from race import RaceState
 from tcpserver import TCPServer
+
+from rcsstatemanager import RCSStateManager
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -47,6 +49,9 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.standbyRaceTable, 0, 1)
 
 
+        self.race_state_label = QLabel("Race State: IN_GARAGE")
+        self.teams_state_label = QLabel("") #TODO: add to rcsstatemanager
+        layout.addWidget(self.race_state_label, 2, 0)
 
         # self.standbyRaceTable.setSortingEnabled(True) #TODO: this breaks everything
 
@@ -78,50 +83,66 @@ class MainWindow(QtWidgets.QMainWindow):
         stop_server_button.clicked.connect(self.stop_server)
         verticalBoxLayout.addWidget(stop_server_button)
 
-
-        race_state_layout = self.create_race_state_button_layout()
+        # Race State Control Buttons
+        race_state_btns = self.create_race_state_buttons()
+        race_state_layout = QHBoxLayout()
+        for btn in race_state_btns:
+            race_state_layout.addWidget(btn)
         layout.addLayout(race_state_layout, 1, 0)
-        team_state_layout = self.create_team_state_button_layout()
+
+        # Team State Control Buttons
+        team_state_btns = self.create_team_state_buttons()
+        team_state_layout = QHBoxLayout()
+        for btn in team_state_btns:
+            team_state_layout.addWidget(btn)
         layout.addLayout(team_state_layout, 1, 1)
+
+        rcsstate = RCSStateManager(
+            self.model.active_race,
+            race_state_btns[0],
+            race_state_btns[1],
+            race_state_btns[2],
+            race_state_btns[3],
+            team_state_btns[2],
+            move_to_active_race_button,
+            remove_from_active_race_button
+        )
+        self.model.dataChanged.connect(rcsstate.gridActiveStateReady)
+        self.model.dataChanged.connect(rcsstate.eStopStateReady)
 
         self.setCentralWidget(self.horizontalGroupBox)
 
-    def create_race_state_button_layout(self):
-        hBox = QHBoxLayout()
-        gridActiveRaceButton = QPushButton("GRID ACTIVE RACE")
-        gridActiveRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.GRID_ACTIVE))
-        hBox.addWidget(gridActiveRaceButton)
+    #TODO: add in garage team btn or remove from RCS documentation
+    def create_race_state_buttons(self):
+        grid_active_race_button = QPushButton("GRID ACTIVE RACE")
+        grid_active_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GRID_ACTIVE))
         start_race_button = QPushButton("START RACE")
+        start_race_button.setEnabled(False)
         start_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GREEN_GREEN))
-        hBox.addWidget(start_race_button)
         red_flag_race_button = QPushButton("RED FLAG RACE")
         red_flag_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_FLAG))
-        hBox.addWidget(red_flag_race_button)
-        eStopRaceButton = QPushButton("E-STOP RACE")
-        eStopRaceButton.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_RED))
-        hBox.addWidget(eStopRaceButton)
+        e_stop_race_button = QPushButton("E-STOP RACE")
+        e_stop_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_RED))
 
-        return hBox
+        return [grid_active_race_button, start_race_button, red_flag_race_button, e_stop_race_button]
 
-    def create_team_state_button_layout(self):
-        hBox = QHBoxLayout()
-        eStopTeamButton = QPushButton("E-STOP TEAM")
-        eStopTeamButton.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_RED))
-        hBox.addWidget(eStopTeamButton)
-        slowTeamButton = QPushButton("SLOW TO STOP TEAM")
-        slowTeamButton.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_FLAG))
-        hBox.addWidget(slowTeamButton)
-        inGarageTeamButton = QPushButton("IN GARAGE TEAM")
-        inGarageTeamButton.clicked.connect(lambda: self.team_state_change_callback(RaceState.IN_GARAGE))
-        hBox.addWidget(inGarageTeamButton)
 
-        return hBox
+    def create_team_state_buttons(self):
+        e_stop_team_button = QPushButton("E-STOP TEAM")
+        e_stop_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_RED))
+        red_flag_team_button = QPushButton("SLOW TO STOP TEAM")
+        red_flag_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_FLAG))
+        in_garage_team_button = QPushButton("IN GARAGE TEAM")
+        in_garage_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.IN_GARAGE))
+
+        return [e_stop_team_button, red_flag_team_button, in_garage_team_button]
 
     def team_state_change_callback(self, state):
         if self.selectedIndex is not None:
             self.model.team_state_change(self.selectedIndex, state)
 
     def race_state_change_callback(self, state):
+        self.race_state_label.setText(f"Race State: {state}")
         self.model.race_state_change(state)
 
     def move_to_active_race(self):
