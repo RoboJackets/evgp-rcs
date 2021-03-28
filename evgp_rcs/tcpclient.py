@@ -3,6 +3,7 @@ import sys
 import signal
 import re
 import time
+import select
 
 def signal_handler(signal, frame):
     print('You pressed Ctrl+C!')
@@ -24,7 +25,7 @@ state = "$IN_GARAGE;"#"$GREEN_GREEN;"
 
 start = time.time()
 split = 5
-states = ["$IN_GARAGE;", "$GREEN_GREEN;", "$RED_RED;"]
+states = ["$IN_GARAGE;", "$GRID_ACTIVE;", "$GREEN_GREEN;", "$RED_FLAG;", "$RED_RED;"]
 selection = 0
 
 msg_parts = ["$", "GREEN_", "GREEN",";", "$", "RED", "_", "RED;", "$GRID_ACTIVE;"]
@@ -41,6 +42,7 @@ try:
 
         data = sock.recv(256)
         amount_received = len(data)
+        print(data)
         if amount_received > 0:
             all_message_data = leftover_message + data.decode('utf-8')
             matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;"" to "something"
@@ -77,6 +79,21 @@ try:
         #     sock.sendall(message.encode('utf-8'))
         #     selection += 1
         #     start = time.time()
+
+        # use 0-4 input to send state message
+        # @Note: Select like this only works on Unix system (not Windows)
+        readable, writable, exceptional = select.select([sys.stdin], [], [], 0)
+        if sys.stdin in readable:
+            line = sys.stdin.readline()
+            if line:
+                try:
+                    num = int(line)
+                    message = states[num%len(states)]
+                    sock.sendall(message.encode('utf-8'))
+                    print(f'sending {message}')
+                except:
+                    pass
+
 
 finally:
     print("closing socket")

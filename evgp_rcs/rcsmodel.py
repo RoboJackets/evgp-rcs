@@ -89,8 +89,10 @@ class RCSModel(QtCore.QAbstractTableModel):
             self.standby_race[tableIdx].state = state
             ip = self.standby_race[tableIdx].ip
 
-        modelTopLeftIndex = self.index(tableIdx,Racer.STATE)
-        self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+
+        modelTopLeftIndex = self.index(tableIdx, 0)
+        modelBottomRightIndex = self.index(tableIdx, Racer.DATA_SIZE-1)
+        self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
 
         self.team_state_change_signal.emit(ip, state)
 
@@ -98,8 +100,8 @@ class RCSModel(QtCore.QAbstractTableModel):
         for r in self.active_race:
             r.state = state
             self.team_state_change_signal.emit(r.ip, state)
-        modelTopLeftIndex = self.index(0,Racer.STATE)
-        modelBottomRightIndex = self.index(len(self.active_race) - 1, Racer.STATE)
+        modelTopLeftIndex = self.index(0,0)
+        modelBottomRightIndex = self.index(len(self.active_race) - 1, Racer.DATA_SIZE-1)
         self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
 
     def move_racer(self, index, race1, race2):
@@ -154,16 +156,18 @@ class RCSModel(QtCore.QAbstractTableModel):
             r = self.active_race[i]
             if r.ip == ip:
                 r.is_connected = True
-                modelTopLeftIndex = self.index(i ,Racer.IS_CONNECTED)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                modelTopLeftIndex = self.index(i, 0)
+                modelBottomRightIndex = self.index(i, Racer.DATA_SIZE-1)
+                self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
                 return
 
         for i in range(len(self.standby_race)):
             r = self.standby_race[i]
             if r.ip == ip:
                 r.is_connected = True
-                modelTopLeftIndex = self.index(len(self.active_race)+i, Racer.IS_CONNECTED)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                modelTopLeftIndex = self.index(len(self.active_race) + i, 0)
+                modelBottomRightIndex = self.index(len(self.active_race) + i, Racer.DATA_SIZE-1)
+                self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
                 return
 
     @QtCore.pyqtSlot(str)
@@ -171,15 +175,17 @@ class RCSModel(QtCore.QAbstractTableModel):
         for i in range(len(self.active_race)):
             if self.active_race[i].ip == ip:
                 self.active_race[i].is_connected = False
-                modelTopLeftIndex = self.index(i, Racer.IS_CONNECTED)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                modelTopLeftIndex = self.index(i, 0)
+                modelBottomRightIndex = self.index(i, Racer.DATA_SIZE-1)
+                self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
                 print(f"Lost connection to active racer team {self.teams_list[ip]}") #TODO: report an error if in active race!
                 return
         for i in range(len(self.standby_race)):
             if self.standby_race[i].ip == ip:
-                self.standby_race[i].is_connected == False
-                modelTopLeftIndex = self.index(len(self.active_race) + i, Racer.IS_CONNECTED)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                self.standby_race[i].is_connected = False
+                modelTopLeftIndex = self.index(len(self.active_race) + i, 0)
+                modelBottomRightIndex = self.index(len(self.active_race) + i, Racer.DATA_SIZE-1)
+                self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
                 return
 
 
@@ -189,14 +195,16 @@ class RCSModel(QtCore.QAbstractTableModel):
         for i in range(len(self.active_race)):
             if self.active_race[i].ip == ip:
                 self.active_race[i].last_response = response
-                modelTopLeftIndex = self.index(i, Racer.LAST_RESPONSE)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                modelTopLeftIndex = self.index(i, 0)
+                modelBottomRightIndex = self.index(i, Racer.DATA_SIZE-1)
+                self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
                 return
         for i in range(len(self.standby_race)):
             if self.standby_race[i].ip == ip:
                 self.standby_race[i].last_response = response
-                modelTopLeftIndex = self.index(i, Racer.LAST_RESPONSE)
-                self.dataChanged.emit(modelTopLeftIndex, modelTopLeftIndex)
+                modelTopLeftIndex = self.index(len(self.active_race) + i, 0)
+                modelBottomRightIndex = self.index(len(self.active_race) + i, Racer.DATA_SIZE-1)
+                self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
                 return
 
 
