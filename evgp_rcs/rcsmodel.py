@@ -151,7 +151,9 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     @QtCore.pyqtSlot(str)
     def new_connection_handler(self, ip):
-        team = self.teams_list[ip]
+        team = self.teams_list.get(ip)
+        if team is None:
+            return
         for i in range(len(self.active_race)):
             r = self.active_race[i]
             if r.ip == ip:

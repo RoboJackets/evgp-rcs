@@ -3,6 +3,7 @@ import socket
 import select
 import sys
 import re
+import time
 from race import RaceState
 
 
@@ -15,7 +16,9 @@ class TCPServer(QObject):
     lost_connection = pyqtSignal(str) #ip as string
     new_response = pyqtSignal(str, RaceState) #ip of responder as string, response as RaceState
 
-    def __init__(self, server_port, server_backlog=10, parent=None):
+    server_ready = pyqtSignal(bool)
+
+    def __init__(self, server_port, server_backlog=10, whitelist=None, parent=None):
         QObject.__init__(self, parent=parent)
         self.server_port = server_port
         self.server_backlog = server_backlog
@@ -25,22 +28,40 @@ class TCPServer(QObject):
         self.responses = {}
         self.leftover_messages = {}
         self.connection_to_addr = {} #TODO: may need to run off (addr,port) or handle oddity if car tries to connect twice
-
+        self.whitelist = whitelist
+        if self.whitelist is None:
+            self.whitelist = []
 
     def stop(self):
         print("Requesting server shutdown")
-        self.continue_run = False
+        self.continue_run = False #no mutex don't worry about it
 
     def on_race_state_change(self, ip, newState): #TODO: check speed of handling a "go" as individual events
         self.states[ip] = newState
         print(f"{ip} state changed to {newState}")
 
+    #returns True on success, false otherwise
     def start_server(self):
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.setblocking(0)
-        self.server.bind(("0.0.0.0", self.server_port))
-        self.server.listen(self.server_backlog)
-        print(f"Server starting at 0.0.0.0 (all local addresses) on port {self.server_port}")
+        tries = 5
+        backoff = 5 #sec
+        for i in range(tries):
+            try:
+                self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.server.setblocking(0)
+                self.server.bind(("0.0.0.0", self.server_port))
+                self.server.listen(self.server_backlog)
+                print(f"Server starting on port {self.server_port}. Look up your LAN IP address to connect.")
+                self.server_ready.emit(True)
+                return True
+            except:
+                if i < tries - 1:
+                    print(f"Server failed to start. Retrying in {backoff} seconds.")
+                    time.sleep(backoff)
+                    continue
+                else:
+                    print("Server is errored. Please restart program and try again.")
+                    self.server_ready.emit(False)
+                    return False
 
     def close_server(self):
         for s in self.connections:
@@ -59,28 +80,34 @@ class TCPServer(QObject):
         del self.states[addr]
         del self.responses[addr]
         self.lost_connection.emit(addr)
+        client.close()
         print(f"Closed client connection to {addr}")
 
     def run_server(self):
-        # try:
-        self.start_server()
+        ret = self.start_server()
+        if not ret:
+            return
         while self.continue_run:
             inputs = self.connections.copy()
             inputs.append(self.server)
             readable, writable, exceptional = select.select(
-                inputs, self.connections, inputs)
+                inputs, self.connections, inputs, 0)
             for s in readable:
                 if s is self.server:
                     #NEW CONNECTION
                     connection, client_address = s.accept()
                     connection.setblocking(0)
+                    if client_address[0] not in self.whitelist:
+                        print(f"Ignoring unknown connection from {client_address}. Not in whitelist!")
+                        connection.close() # we don't know you!
+                        continue
                     self.connections.append(connection)
                     self.connection_to_addr[connection] = client_address[0]
                     self.states[client_address[0]] = RaceState.IN_GARAGE
                     self.responses[client_address[0]] = RaceState.IN_GARAGE
                     self.leftover_messages[client_address[0]] = ""
-                    print(f"accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
-                    self.new_connection.emit(client_address[0]) #TODO: handle unknown connections and double IP conenctions just in case
+                    print(f"Accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
+                    self.new_connection.emit(client_address[0]) #TODO: handle double IP connections just in case
                 else:
                     try:
                         data = s.recv(1024)
@@ -88,8 +115,6 @@ class TCPServer(QObject):
                             addr, port = s.getpeername()
                             msg = data.decode('utf-8')
                             self.process_message(addr, msg)
-                        else:
-                            pass #TODO: something
                     except OSError:
                         self.remove_lost_client(s)
                         try:
@@ -106,19 +131,13 @@ class TCPServer(QObject):
                     s.send(msg.encode('utf-8'))
                 except OSError:
                     self.remove_lost_client(s)
-            #TODO: handle exceptional?
         self.close_server()
-        # except: #TODO: better handling of shutdown?
-        #     print("Unexpected error:", sys.exc_info()[0])
-        #     self.close_server()
 
 
     def process_message(self, ip, msg):
-        #TODO: handle if a full message doesn't come at once, saving things after ; for next time around?
-        #TODO: handle multiple messages at once -- I think just grab the last?
-        #TODO: make matches use START_CHAR and END_CHAR
+        #Grabs the last message only. Teams are expected to be consistent.
         all_message_data = self.leftover_messages[ip] + msg
-        matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;"" to "something"
+        matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;" to "something"
 
         last_start = max(all_message_data.rfind(self.START_CHAR),0)
         last_end = max(all_message_data.rfind(self.END_CHAR),0)
@@ -139,7 +158,7 @@ class TCPServer(QObject):
                 print(e) #TODO: logging of oddity
                 return
 
-#TODO: remove this debugging
+# Use to debug without GUI
 # server = TcpServer(8080, 10)
 # server.start_server()
 # server.run_server()

@@ -42,7 +42,6 @@ try:
 
         data = sock.recv(256)
         amount_received = len(data)
-        print(data)
         if amount_received > 0:
             all_message_data = leftover_message + data.decode('utf-8')
             matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;"" to "something"

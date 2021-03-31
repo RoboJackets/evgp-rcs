@@ -2,7 +2,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
-from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox
 from rcsmodel import RCSModel, RCSSortFilterProxyModel
 from race import RaceState
 from tcpserver import TCPServer
@@ -75,14 +75,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         layout.addLayout(verticalBoxLayout, 0, 2)
 
-
-        start_server_button = QPushButton("Start Server")
-        start_server_button.clicked.connect(self.start_server)
-        verticalBoxLayout.addWidget(start_server_button)
-        stop_server_button = QPushButton("Stop Server")
-        stop_server_button.clicked.connect(self.stop_server)
-        verticalBoxLayout.addWidget(stop_server_button)
-
         # Race State Control Buttons
         race_state_btns = self.create_race_state_buttons()
         race_state_layout = QHBoxLayout()
@@ -110,7 +102,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model.dataChanged.connect(rcsstate.gridActiveStateReady)
         self.model.dataChanged.connect(rcsstate.eStopStateReady)
 
-        self.setCentralWidget(self.horizontalGroupBox)
+
+        # wait for start of server
+        self.server_wait_label = QLabel("Waiting for TCP Server to start. Please hold on.")
+        self.setCentralWidget(self.server_wait_label)
+        self.start_server()
+
+    # Make sure we stop the server on window close
+    def closeEvent(self, event):
+        self.stop_server()
+        event.accept()
 
     #TODO: add in garage team btn or remove from RCS documentation
     def create_race_state_buttons(self):
@@ -158,16 +159,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.clearAllSelections()
 
     def start_server(self):
-        #TODO: handle this doesn't work to start, stop, and start again
-        #TODO: handle address in use (server just shut down)
         if not self.is_server_started:
             self.is_server_started = True
             port = 8080
             server_backlog = 10
-            self.server = TCPServer(port, server_backlog)
+            ip_list = self.model.teams_list.keys()
+            self.server = TCPServer(port, server_backlog, whitelist=ip_list)
             self.server.new_connection.connect(self.model.new_connection_handler)
             self.server.lost_connection.connect(self.model.lost_connection_handler)
             self.server.new_response.connect(self.model.new_response_handler)
+
+            self.server.server_ready.connect(self.server_ready_handler)
 
             self.model.team_state_change_signal.connect(self.server.on_race_state_change)
 
@@ -178,8 +180,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def stop_server(self):
         if self.is_server_started:
-            self.server.stop() #TODO: make this a signal so it works. Also mutex?
+            self.server.stop()
             self.is_server_started = False
+            self.server_thread.quit()
+
+    @QtCore.pyqtSlot(bool)
+    def server_ready_handler(self, isReady):
+        if isReady:
+            self.setCentralWidget(self.horizontalGroupBox)
+        if not isReady:
+            self.server_wait_label.setText("Server Error: Please restart program.")
+            QMessageBox.question(self, 'Server Error',
+                                "Server failed to start.\nPress OK to quit program, fix your network issues, then restart this program.",
+                                QMessageBox.Ok)
+            self.close()
 
     @QtCore.pyqtSlot(QItemSelection, QItemSelection)
     def standby_race_table_selection_handler(self, filterTableSelection, filterTableDeselected):
@@ -191,8 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def active_race_table_selection_handler(self, tableSelection, tableDeselected):
         if tableSelection.indexes():
             self.standbyRaceTable.selectionModel().clearSelection()
-            #self.selection = self.proxyModel.mapToSource(tableSelection.indexes()) #TODO: main table should be proxy
-            self.selectedIndex = tableSelection.indexes()[0].row()
+            self.selectedIndex = self.activeRaceProxyModel.mapToSource(tableSelection.indexes()[0]).row()
 
     def clearAllSelections(self):
         self.activeRaceTable.selectionModel().clearSelection()
