@@ -2,7 +2,7 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
-from PyQt5.QtWidgets import QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox
+from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox, QSizePolicy
 from rcsmodel import RCSModel, RCSSortFilterProxyModel
 from race import RaceState
 from tcpserver import TCPServer
@@ -12,6 +12,8 @@ from rcsstatemanager import RCSStateManager
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.showMaximized()
 
         self.is_server_started = False
 
@@ -31,9 +33,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.activeRaceTable.setModel(self.activeRaceProxyModel)
         self.activeRaceTable.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.activeRaceTable.horizontalHeader().setStretchLastSection(True);
+        self.activeRaceTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.activeRaceTable.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.activeRaceTable.setSelectionMode(QtWidgets.QTableView.SingleSelection)
-        layout.addWidget(self.activeRaceTable, 0, 0)
+        layout.addWidget(self.activeRaceTable, 1, 0)
 
 
         self.standbyRaceProxyModel = RCSSortFilterProxyModel(False)
@@ -44,14 +48,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.standbyRaceTable.setModel(self.standbyRaceProxyModel)
         self.standbyRaceTable.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.standbyRaceTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.standbyRaceTable.horizontalHeader().setStretchLastSection(True);
         self.standbyRaceTable.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
         self.standbyRaceTable.setSelectionMode(QtWidgets.QTableView.SingleSelection)
-        layout.addWidget(self.standbyRaceTable, 0, 1)
+        layout.addWidget(self.standbyRaceTable, 1, 1)
 
 
         self.race_state_label = QLabel("Race State: IN_GARAGE")
-        self.teams_state_label = QLabel("") #TODO: add to rcsstatemanager
-        layout.addWidget(self.race_state_label, 2, 0)
+        self.info_label = QLabel("Some info about the race <TODO>") #TODO: add to rcsstatemanager
+        layout.addWidget(self.race_state_label, 0, 0)
+        layout.addWidget(self.info_label, 0, 1)
 
         # self.standbyRaceTable.setSortingEnabled(True) #TODO: this breaks everything
 
@@ -60,34 +67,53 @@ class MainWindow(QtWidgets.QMainWindow):
         self.activeRaceTable.selectionModel().selectionChanged.connect(self.active_race_table_selection_handler)
 
 
-
         self.horizontalGroupBox = QGroupBox("Grid")
         self.horizontalGroupBox.setLayout(layout)
 
-        verticalBoxLayout = QVBoxLayout()
+        # All relevant button in sidebar
+        self.button_sidebar_vBox = QVBoxLayout()
+        layout.addLayout(self.button_sidebar_vBox, 1, 3)
+
+        # Move Racers Buttons
+        self.button_container_stylesheet = "QWidget#ButtonContainer{background-color: rgb(200, 200, 200);\n border-radius: 5;\n}"
+        move_racers_button_container = QWidget()
+        move_racers_button_container.setObjectName("ButtonContainer")
+        move_racers_button_container.setStyleSheet(self.button_container_stylesheet)
+        move_racers_button_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        move_racers_layout = QVBoxLayout(move_racers_button_container)
+        move_racers_layout.addWidget(QLabel("ADMIN CONTROLS"))
         move_to_active_race_button = QPushButton("Move to Active Race")
         move_to_active_race_button.clicked.connect(self.move_to_active_race)
-        verticalBoxLayout.addWidget(move_to_active_race_button)
+        move_racers_layout.addWidget(move_to_active_race_button)
         remove_from_active_race_button = QPushButton("Remove from Active Race")
         remove_from_active_race_button.clicked.connect(self.remove_from_active_race)
-        verticalBoxLayout.addWidget(remove_from_active_race_button)
+        move_racers_layout.addWidget(remove_from_active_race_button)
 
-
-        layout.addLayout(verticalBoxLayout, 0, 2)
-
-        # Race State Control Buttons
-        race_state_btns = self.create_race_state_buttons()
-        race_state_layout = QHBoxLayout()
-        for btn in race_state_btns:
-            race_state_layout.addWidget(btn)
-        layout.addLayout(race_state_layout, 1, 0)
+        self.button_sidebar_vBox.addWidget(move_racers_button_container)
 
         # Team State Control Buttons
+        team_state_button_container = QWidget()
+        team_state_button_container.setObjectName("ButtonContainer")
+        team_state_button_container.setStyleSheet(self.button_container_stylesheet)
+        team_state_button_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         team_state_btns = self.create_team_state_buttons()
-        team_state_layout = QHBoxLayout()
+        team_state_layout = QVBoxLayout(team_state_button_container)
+        team_state_layout.addWidget(QLabel("TEAM CONTROLS"))
         for btn in team_state_btns:
             team_state_layout.addWidget(btn)
-        layout.addLayout(team_state_layout, 1, 1)
+        self.button_sidebar_vBox.addWidget(team_state_button_container)
+
+        # Race State Control Buttons
+        race_state_button_container = QWidget()
+        race_state_button_container.setObjectName("ButtonContainer")
+        race_state_button_container.setStyleSheet(self.button_container_stylesheet)
+        race_state_button_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        race_state_btns = self.create_race_state_buttons()
+        race_state_layout = QVBoxLayout(race_state_button_container)
+        race_state_layout.addWidget(QLabel("RACE CONTROLS"))
+        for btn in race_state_btns:
+            race_state_layout.addWidget(btn)
+        self.button_sidebar_vBox.addWidget(race_state_button_container)
 
         rcsstate = RCSStateManager(
             self.model.active_race,
@@ -95,18 +121,21 @@ class MainWindow(QtWidgets.QMainWindow):
             race_state_btns[1],
             race_state_btns[2],
             race_state_btns[3],
-            team_state_btns[2],
+            team_state_btns[0],
             move_to_active_race_button,
             remove_from_active_race_button
         )
         self.model.dataChanged.connect(rcsstate.gridActiveStateReady)
         self.model.dataChanged.connect(rcsstate.eStopStateReady)
 
+        verticalSpacer = QtWidgets.QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(verticalSpacer, 3, 2)
 
         # wait for start of server
         self.server_wait_label = QLabel("Waiting for TCP Server to start. Please hold on.")
         self.setCentralWidget(self.server_wait_label)
         self.start_server()
+
 
     # Make sure we stop the server on window close
     def closeEvent(self, event):
@@ -129,14 +158,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def create_team_state_buttons(self):
-        e_stop_team_button = QPushButton("E-STOP TEAM")
-        e_stop_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_RED))
-        red_flag_team_button = QPushButton("SLOW TO STOP TEAM")
-        red_flag_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_FLAG))
         in_garage_team_button = QPushButton("IN GARAGE TEAM")
         in_garage_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.IN_GARAGE))
+        red_flag_team_button = QPushButton("RED FLAG TEAM")
+        red_flag_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_FLAG))
+        e_stop_team_button = QPushButton("E-STOP TEAM")
+        e_stop_team_button.clicked.connect(lambda: self.team_state_change_callback(RaceState.RED_RED))
 
-        return [e_stop_team_button, red_flag_team_button, in_garage_team_button]
+        return [in_garage_team_button, red_flag_team_button, e_stop_team_button]
 
     def team_state_change_callback(self, state):
         if self.selectedIndex is not None:
