@@ -73,6 +73,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # All relevant button in sidebar
         self.button_sidebar_vBox = QVBoxLayout()
         layout.addLayout(self.button_sidebar_vBox, 1, 3)
+        self.button_sidebar_vBox.setAlignment(Qt.AlignTop)
 
         # Move Racers Buttons
         self.button_container_stylesheet = "QWidget#ButtonContainer{background-color: rgb(200, 200, 200);\n border-radius: 5;\n}"
@@ -129,7 +130,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model.dataChanged.connect(rcsstate.eStopStateReady)
 
         verticalSpacer = QtWidgets.QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        layout.addItem(verticalSpacer, 3, 2)
+        layout.addItem(verticalSpacer, 3, 0, rowSpan=1, columnSpan=3)
 
         # wait for start of server
         self.server_wait_label = QLabel("Waiting for TCP Server to start. Please hold on.")
