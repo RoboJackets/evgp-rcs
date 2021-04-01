@@ -35,7 +35,7 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            # data is tabled as rows active followed by standy
+            # data is tabled as rows active followed by standby
             # rows are filled with racer data (see race.py definition)
             r = index.row()
             c = index.column()
@@ -86,8 +86,8 @@ class RCSModel(QtCore.QAbstractTableModel):
 
         else:
             #TODO: should standby racers be allowed to be in GO states?
-            self.standby_race[tableIdx].state = state
-            ip = self.standby_race[tableIdx].ip
+            self.standby_race[tableIdx-len(self.active_race)].state = state
+            ip = self.standby_race[tableIdx-len(self.active_race)].ip
 
 
         modelTopLeftIndex = self.index(tableIdx, 0)
