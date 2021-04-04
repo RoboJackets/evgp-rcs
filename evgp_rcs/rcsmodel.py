@@ -1,5 +1,6 @@
 import socket
 import yaml
+import logging
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.Qt import QSortFilterProxyModel
@@ -125,7 +126,7 @@ class RCSModel(QtCore.QAbstractTableModel):
             self.layoutChanged.emit() #TODO: see if this is right
             return True
         else:
-            print("Racer already in the active race")
+            logging.warning("Racer already in the active race.")
             return False
 
     #returns true or false if anything actually moved
@@ -144,7 +145,7 @@ class RCSModel(QtCore.QAbstractTableModel):
             self.layoutChanged.emit() #TODO: see if this is right
             return True
         else:
-            print("Racer not in active race")
+            logging.warning("Racer not in active race.")
             return False
 
     @QtCore.pyqtSlot(str)
@@ -178,7 +179,7 @@ class RCSModel(QtCore.QAbstractTableModel):
                 modelTopLeftIndex = self.index(i, 0)
                 modelBottomRightIndex = self.index(i, Racer.DATA_SIZE-1)
                 self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
-                print(f"Lost connection to active racer team {self.teams_list[ip]}") #TODO: report an error if in active race!
+                logging.error(f"Lost connection to active racer team {self.teams_list[ip]}") #TODO: show UI error in table if in active race
                 return
         for i in range(len(self.standby_race)):
             if self.standby_race[i].ip == ip:

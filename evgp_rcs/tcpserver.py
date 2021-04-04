@@ -4,6 +4,7 @@ import select
 import sys
 import re
 import time
+import logging
 from race import RaceState
 
 
@@ -33,12 +34,12 @@ class TCPServer(QObject):
             self.whitelist = []
 
     def stop(self):
-        print("Requesting server shutdown")
+        logging.info("Requesting server shutdown")
         self.continue_run = False #no mutex don't worry about it
 
     def on_race_state_change(self, ip, newState): #TODO: check speed of handling a "go" as individual events
         self.states[ip] = newState
-        print(f"{ip} state changed to {newState}")
+        logging.debug(f"{ip} state changed to {newState}")
 
     #returns True on success, false otherwise
     def start_server(self):
@@ -50,16 +51,16 @@ class TCPServer(QObject):
                 self.server.setblocking(0)
                 self.server.bind(("0.0.0.0", self.server_port))
                 self.server.listen(self.server_backlog)
-                print(f"Server starting on port {self.server_port}. Look up your LAN IP address to connect.")
+                logging.info(f"Server starting on port {self.server_port}. Look up your LAN IP address to connect.")
                 self.server_ready.emit(True)
                 return True
             except:
                 if i < tries - 1:
-                    print(f"Server failed to start. Retrying in {backoff} seconds.")
+                    logging.error(f"Server failed to start. Retrying in {backoff} seconds.")
                     time.sleep(backoff)
                     continue
                 else:
-                    print("Server is errored. Please restart program and try again.")
+                    logging.critical("Server is errored. Please restart program and try again.")
                     self.server_ready.emit(False)
                     return False
 
@@ -72,7 +73,7 @@ class TCPServer(QObject):
         self.connection_to_addr = {}
         self.server.shutdown(socket.SHUT_RDWR)
         self.server.close()
-        print("Server shut down by user request")
+        logging.info("Server shut down by user request")
 
     def remove_lost_client(self, client):
         addr = self.connection_to_addr[client]
@@ -81,7 +82,7 @@ class TCPServer(QObject):
         del self.responses[addr]
         self.lost_connection.emit(addr)
         client.close()
-        print(f"Closed client connection to {addr}")
+        logging.debug(f"Closed client connection to {addr}")
 
     def run_server(self):
         ret = self.start_server()
@@ -98,7 +99,7 @@ class TCPServer(QObject):
                     connection, client_address = s.accept()
                     connection.setblocking(0)
                     if client_address[0] not in self.whitelist:
-                        print(f"Ignoring unknown connection from {client_address}. Not in whitelist!")
+                        logging.debug(f"Ignoring unknown connection from {client_address}. Not in whitelist!")
                         connection.close() # we don't know you!
                         continue
                     self.connections.append(connection)
@@ -106,7 +107,7 @@ class TCPServer(QObject):
                     self.states[client_address[0]] = RaceState.IN_GARAGE
                     self.responses[client_address[0]] = RaceState.IN_GARAGE
                     self.leftover_messages[client_address[0]] = ""
-                    print(f"Accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
+                    logging.debug(f"Accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
                     self.new_connection.emit(client_address[0]) #TODO: handle double IP connections just in case
                 else:
                     try:
@@ -146,7 +147,7 @@ class TCPServer(QObject):
         else:
             self.leftover_messages[ip] = all_message_data[last_start:]
 
-        if matches: #TODO: report error if effectively empty message?
+        if matches:
             last_msg = matches[-1]
             try:
                 new_state = RaceState(last_msg)
@@ -155,7 +156,7 @@ class TCPServer(QObject):
                     self.new_response.emit(ip, new_state)
                     self.responses[ip] = new_state
             except ValueError as e:
-                print(e) #TODO: logging of oddity
+                logging.error(e)
                 return
 
 # Use to debug without GUI

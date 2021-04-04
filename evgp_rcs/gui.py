@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
@@ -9,6 +10,8 @@ from race import RaceState
 from tcpserver import TCPServer
 
 from rcsstatemanager import RCSStateManager
+
+logging.basicConfig(format='%(levelname)s::%(filename)s: %(message)s', level=logging.DEBUG) #TODO: lower level
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -20,6 +23,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         teams_list_file_path = "racers_list.yaml"
         if not os.path.exists(teams_list_file_path):
+            logging.warning("No racers_list.yaml found!")
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("No racers_list.yaml found.\nPress Open and use the file explorer to select the racer list YAML file")
