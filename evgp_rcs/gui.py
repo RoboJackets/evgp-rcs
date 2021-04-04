@@ -1,8 +1,9 @@
 import sys
+import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
-from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox, QSizePolicy, QFileDialog
 from rcsmodel import RCSModel, RCSSortFilterProxyModel
 from race import RaceState
 from tcpserver import TCPServer
@@ -17,7 +18,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.is_server_started = False
 
-        self.model = RCSModel()
+        teams_list_file_path = "racers_list.yaml"
+        if not os.path.exists(teams_list_file_path):
+            msgBox = QMessageBox()
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("No racers_list.yaml found.\nPress Open and use the file explorer to select the racer list YAML file")
+            msgBox.setWindowTitle("No racers_list.yaml found!")
+            msgBox.setStandardButtons(QMessageBox.Open)
+            returnValue = msgBox.exec()
+            if returnValue == QMessageBox.Open:
+                teams_list_file_path = QFileDialog.getOpenFileName(self, 'Open Racer List File', os.getcwd(),"Yaml files (*.yaml)")[0]
+        self.model = RCSModel(teams_list_file_path)
 
         layout = QGridLayout() #TODO: better layout
         layout.setColumnStretch(0, 10)
@@ -221,8 +232,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not isReady:
             self.server_wait_label.setText("Server Error: Please restart program.")
             QMessageBox.question(self, 'Server Error',
-                                "Server failed to start.\nPress OK to quit program, fix your network issues, then restart this program.",
-                                QMessageBox.Ok)
+                                "Server failed to start.\nPress \"Close\" to quit program, then fix your network issues and restart this program.",
+                                QMessageBox.Close)
             self.close()
 
     @QtCore.pyqtSlot(QItemSelection, QItemSelection)

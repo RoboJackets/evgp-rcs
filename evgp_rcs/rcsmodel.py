@@ -10,23 +10,21 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     team_state_change_signal = pyqtSignal(str, RaceState) #ip of responder as string, response as RaceState
 
-    def __init__(self):
+    def __init__(self, teams_list_file_path):
         super(RCSModel, self).__init__()
         self.active_race = []
         self.standby_race = []
         #TODO: disconnected or not connected racers from teams list should show
         self.teams_list = {}
-        self.load_team_list()
+        self.load_team_list(teams_list_file_path)
 
-    def load_team_list(self):
-        #TODO: load a map from yaml file of team name to IP
-        #self.teams_list = yaml.load(file("../racers_list.yaml"))
-        self.teams_list = {
-            "123.123.123.123": "team1",
-            "456.456.456.456": "team2",
-            "789.789.789.789": "team3",
-            "127.0.0.1": "team4"
-            }
+    def load_team_list(self, filepath):
+        self.teams_list={}
+        try:
+            with open(filepath) as f:
+                self.teams_list = yaml.load(f, Loader=yaml.FullLoader)
+        except:
+            pass
         self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount() + len(self.teams_list))
         for ip, team in self.teams_list.items():
             r = Racer(team, ip)

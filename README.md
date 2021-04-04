@@ -17,7 +17,7 @@ PyQt 5 is used for the GUI framework.
 1. Clone repo, navigate to repo in terminal
 1. ``poetry install``
 1. ``poetry run python evgp_rcs/gui.py``
-1. Place a ``racer_list.yaml`` in repo folder
+1. Place a ``racer_list.yaml`` in repo top level folder
     - List racers as ``STATIC_IP: TEAM_NAME``
     - Example: ``123.123.123: RoboJackets``
 1. Start Server button
