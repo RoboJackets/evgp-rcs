@@ -210,7 +210,6 @@ class RCSModel(QtCore.QAbstractTableModel):
 
 
 
-#TODO: a way to use this to filter both models
 class RCSSortFilterProxyModel(QSortFilterProxyModel):
 
     def __init__(self, filterAcceptsActive, parent=None):
@@ -219,26 +218,7 @@ class RCSSortFilterProxyModel(QSortFilterProxyModel):
         self.filterAcceptsActive = filterAcceptsActive
 
     def filterAcceptsRow(self, sourceRow, sourceParent):
-        # idx = self.sourceModel().index(sourceRow, Racer.IS_CONNECTED) #TODO: remove after testing
-        # return not self.sourceModel().data(idx)
         if self.filterAcceptsActive:
             return sourceRow < len(self.sourceModel().active_race)
         else:
             return sourceRow >= len(self.sourceModel().active_race)
-
-    def lessThan(self, left, right):
-        #sort by connected then IP
-        leftIdx = self.index(left.row(), Racer.IS_CONNECTED)
-        rightIdx = self.index(right.row(), Racer.IS_CONNECTED)
-        leftConnection = self.sourceModel().data(leftIdx)
-        rightConnection = self.sourceModel().data(rightIdx)
-        if leftConnection and not rightConnection:
-            return False
-        elif rightConnection and not leftConnection:
-            return True
-        else:
-            leftIdx = self.index(left.row(), Racer.TEAM)
-            rightIdx = self.index(right.row(), Racer.TEAM)
-            leftTeam = self.sourceModel().data(leftIdx)
-            rightTeam = self.sourceModel().data(rightIdx)
-            return leftTeam < rightTeam

@@ -75,7 +75,10 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.race_state_label, 0, 0)
         layout.addWidget(self.info_label, 0, 1)
 
-        # self.standbyRaceTable.setSortingEnabled(True) #TODO: this breaks everything
+        self.standbyRaceTable.setSortingEnabled(True)
+        self.standbyRaceTable.sortByColumn(1, Qt.AscendingOrder)
+        self.activeRaceTable.setSortingEnabled(True)
+        self.activeRaceTable.sortByColumn(1, Qt.AscendingOrder)
 
         self.selectedIndex = None
         self.standbyRaceTable.selectionModel().selectionChanged.connect(self.standby_race_table_selection_handler)
