@@ -15,7 +15,6 @@ class RCSModel(QtCore.QAbstractTableModel):
         super(RCSModel, self).__init__()
         self.active_race = []
         self.standby_race = []
-        #TODO: disconnected or not connected racers from teams list should show
         self.teams_list = {}
         self.load_team_list(teams_list_file_path)
 
@@ -70,10 +69,16 @@ class RCSModel(QtCore.QAbstractTableModel):
         r = index.row()
         if self.data(self.index(r, Racer.IS_CONNECTED)):
             #Connected
-            if self.data(self.index(r, Racer.STATE)) != self.data(self.index(r, Racer.LAST_RESPONSE)):
-                return QtGui.QColor(255, 100, 100)
+            current_state = RaceState(self.data(self.index(r, Racer.STATE)))
+            last_response = RaceState(self.data(self.index(r, Racer.LAST_RESPONSE)))
+            if current_state == RaceState.GRID_ACTIVE and current_state == last_response:
+                return QtGui.QColor(129, 199, 132) # GREEN when ready for race start
+            elif current_state != RaceState.IN_GARAGE and current_state != last_response:
+                return QtGui.QColor(255, 100, 100) # RED if requested state not reported back
+            else:
+                return QtGui.QColor(255, 255, 255) # white if normal
         else:
-            return QtGui.QColor(190, 190, 190)
+            return QtGui.QColor(190, 190, 190) # GRAY if not connected
 
 
     def team_state_change(self, tableIdx, state):
