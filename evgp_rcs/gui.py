@@ -209,7 +209,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def start_server(self):
         if not self.is_server_started:
             self.is_server_started = True
-            port = 8080
+            port = 12017
             server_backlog = 10
             ip_list = self.model.teams_list.keys()
             self.server = TCPServer(port, server_backlog, whitelist=ip_list)
