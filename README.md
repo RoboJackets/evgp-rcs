@@ -1,6 +1,6 @@
 # EVGP Race Control System (RCS)
 
-Created for the [EVGranPrix (EVGP) Autonomous Kart Racing Competition](https://evgrandprix.org/autonomous/).
+Created for the [EVGrandPrix (EVGP) Autonomous Kart Racing Competition](https://evgrandprix.org/autonomous/).
 Karts can connect to the RCS through a simple TCP socket.
 The GUI allows management of a race by signaling the race start sequence, race ending, and E-Stops. It is up to teams to handle and respect race signals and act safely during manual and autonomous control.
 
