@@ -54,13 +54,13 @@ class TCPServer(QObject):
                 logging.info(f"Server starting on port {self.server_port}. Look up your LAN IP address to connect.")
                 self.server_ready.emit(True)
                 return True
-            except:
+            except Exception as e:
                 if i < tries - 1:
-                    logging.error(f"Server failed to start. Retrying in {backoff} seconds.")
+                    logging.error(f"Server failed to start. Retrying in {backoff} seconds. Exception was: {e}")
                     time.sleep(backoff)
                     continue
                 else:
-                    logging.critical("Server is errored. Please restart program and try again.")
+                    logging.critical("Server is errored. Please restart program and try again. Exception was: {e}")
                     self.server_ready.emit(False)
                     return False
 
