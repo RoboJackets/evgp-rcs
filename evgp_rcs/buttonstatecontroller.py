@@ -63,7 +63,7 @@ class ButtonStateController():
 
     def in_garage_state(self):
         self.race_state_label.setText("Race State: IN_GARAGE")
-        self.race_info_label.setText("No Race running.")
+        self.race_info_label.setText("Race Status: No Race running.")
 
         self.grid_active_race_button.setEnabled(True)
         self.start_race_button.setEnabled(False)
@@ -76,7 +76,7 @@ class ButtonStateController():
 
     def grid_active_state(self):
         self.race_state_label.setText("Race State: GRID_ACTIVE")
-        self.race_info_label.setText("Waiting for all Racers to ready up.")
+        self.race_info_label.setText("Race Status: Waiting for all Racers to ready up.")
         #can't change racer while race going
         self.grid_active_race_button.setEnabled(False)
         self.start_race_button.setEnabled(False)
@@ -87,12 +87,9 @@ class ButtonStateController():
         self.move_racer_active_button.setEnabled(False)
         self.move_racer_standby_button.setEnabled(False)
 
-        #TODO: tooltips
-        self.move_racer_active_button.setToolTip("Cannot move racer while Race is Active")
-
     def grid_active_ready_state(self):
         self.race_state_label.setText("Race State: GRID_ACTIVE")
-        self.race_info_label.setText("All Racers are ready to start race.")
+        self.race_info_label.setText("Race Status: All Racers are ready to start race.")
 
         self.grid_active_race_button.setEnabled(False)
         self.start_race_button.setEnabled(True)
@@ -105,7 +102,7 @@ class ButtonStateController():
 
     def green_green_state(self):
         self.race_state_label.setText("Race State: GREEN_GREEN")
-        self.race_info_label.setText("Race in progress.")
+        self.race_info_label.setText("Race Status: Race in progress.")
 
         self.grid_active_race_button.setEnabled(False)
         self.start_race_button.setEnabled(False)
@@ -118,7 +115,7 @@ class ButtonStateController():
 
     def red_flag_state(self):
         self.race_state_label.setText("Race State: RED_FLAG")
-        self.race_info_label.setText("Racers are stopping.")
+        self.race_info_label.setText("Race Status: Racers are stopping.")
 
         self.grid_active_race_button.setEnabled(False)
         self.start_race_button.setEnabled(False)
@@ -131,7 +128,7 @@ class ButtonStateController():
 
     def red_red_state(self):
         self.race_state_label.setText("Race State: RED_RED")
-        self.race_info_label.setText("Race over. Waiting for racers to stop.")
+        self.race_info_label.setText("Race Status: Race over. Waiting for racers to stop.")
 
         self.grid_active_race_button.setEnabled(False)
         self.start_race_button.setEnabled(False)
@@ -144,7 +141,7 @@ class ButtonStateController():
 
     def red_red_ready_state(self):
         self.race_state_label.setText("Race State: RED_RED")
-        self.race_info_label.setText("Race over and all Racers reporting stopped. You may IN_GARAGE the race.")
+        self.race_info_label.setText("Race Status: Race over and all Racers reporting stopped. You may IN_GARAGE the race.")
 
         self.grid_active_race_button.setEnabled(False)
         self.start_race_button.setEnabled(False)

@@ -1,3 +1,4 @@
+import logging
 from race import RaceState, Racer
 
 # Manages Race state
@@ -6,7 +7,7 @@ class RCSStateManager():
 
     def __init__(self,
             racers_list, #ref to RCSModel racers list
-            state_signal
+            state_signal #ref to RCSModel signal
             ):
         self.state = RaceState.IN_GARAGE
         self.is_ready = False
@@ -16,7 +17,7 @@ class RCSStateManager():
     def update_race_state(self, new_state):
         if self.can_transition(new_state):
             self.state = new_state
-            print(self.state)
+            logging.info(f"Race State is now {self.state}")
         self.is_ready = self.racers_ready(self.state)
         self.race_state_change_signal.emit(self.state, self.is_ready)
         return self.state

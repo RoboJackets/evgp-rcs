@@ -19,6 +19,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         self.showMaximized()
+        self.setWindowTitle("EVGP Race Control System")
 
         self.is_server_started = False
 
@@ -35,7 +36,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 teams_list_file_path = QFileDialog.getOpenFileName(self, 'Open Racer List File', os.getcwd(),"Yaml files (*.yaml)")[0]
         self.model = RCSModel(teams_list_file_path)
 
-        layout = QGridLayout() #TODO: better layout
+        layout = QGridLayout()
         layout.setColumnStretch(0, 10)
         layout.setColumnStretch(1, 10)
 
@@ -70,11 +71,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.standbyRaceTable.setSelectionMode(QtWidgets.QTableView.SingleSelection)
         layout.addWidget(self.standbyRaceTable, 1, 1)
 
-
-        self.race_state_label = QLabel("Race State: IN_GARAGE")
-        self.info_label = QLabel("Some info about the race will appear here")
-        layout.addWidget(self.race_state_label, 0, 0)
-        layout.addWidget(self.info_label, 0, 1)
+        self.activeRaceTableLabel = QLabel("Active Race Table")
+        self.activeRaceTableLabel.setAlignment(Qt.AlignCenter)
+        self.standbyRaceTableLabel = QLabel("Other Teams Table")
+        self.standbyRaceTableLabel.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.activeRaceTableLabel, 0, 0)
+        layout.addWidget(self.standbyRaceTableLabel, 0, 1)
 
         self.standbyRaceTable.setSortingEnabled(True)
         self.standbyRaceTable.sortByColumn(1, Qt.AscendingOrder)
@@ -86,10 +88,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.activeRaceTable.selectionModel().selectionChanged.connect(self.active_race_table_selection_handler)
 
 
-        self.horizontalGroupBox = QGroupBox("Grid")
+        self.horizontalGroupBox = QGroupBox("")
         self.horizontalGroupBox.setLayout(layout)
 
-        # All relevant button in sidebar
+        # All relevant buttons in sidebar
         self.button_sidebar_vBox = QVBoxLayout()
         layout.addLayout(self.button_sidebar_vBox, 1, 3)
         self.button_sidebar_vBox.setAlignment(Qt.AlignTop)
@@ -135,6 +137,15 @@ class MainWindow(QtWidgets.QMainWindow):
             race_state_layout.addWidget(btn)
         self.button_sidebar_vBox.addWidget(race_state_button_container)
 
+        self.info_group_box = QGroupBox("Race Status Information")
+        self.race_state_label = QLabel("Race State: IN_GARAGE")
+        self.info_label = QLabel("Race Status: No Race running.")
+        info_layout = QVBoxLayout()
+        info_layout.addWidget(self.race_state_label)
+        info_layout.addWidget(self.info_label)
+        self.info_group_box.setLayout(info_layout)
+        layout.addWidget(self.info_group_box, 3, 0)
+
         self.buttonController = ButtonStateController(
             race_state_btns[0],
             race_state_btns[1],
@@ -150,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.model.race_state_change_signal.connect(self.buttonController.race_state_updated)
 
         verticalSpacer = QtWidgets.QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        layout.addItem(verticalSpacer, 3, 0, rowSpan=1, columnSpan=3)
+        layout.addItem(verticalSpacer, 4, 0, rowSpan=1, columnSpan=3)
 
         # wait for start of server
         self.server_wait_label = QLabel("Waiting for TCP Server to start. Please hold on.")
@@ -163,7 +174,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stop_server()
         event.accept()
 
-    #TODO: add in garage team btn or remove from RCS documentation
+
     def create_race_state_buttons(self):
         grid_active_race_button = QPushButton("GRID ACTIVE RACE")
         grid_active_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.GRID_ACTIVE))
