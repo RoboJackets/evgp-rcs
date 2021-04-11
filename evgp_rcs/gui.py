@@ -5,11 +5,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread, QItemSelection
 from PyQt5.Qt import QSortFilterProxyModel
 from PyQt5.QtWidgets import QWidget, QGridLayout, QGroupBox, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox, QSizePolicy, QFileDialog
+
 from rcsmodel import RCSModel, RCSSortFilterProxyModel
 from race import RaceState
 from tcpserver import TCPServer
-
 from rcsstatemanager import RCSStateManager
+from buttonstatecontroller import ButtonStateController
 
 logging.basicConfig(format='%(levelname)s::%(filename)s: %(message)s', level=logging.DEBUG) #TODO: lower level
 
@@ -71,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         self.race_state_label = QLabel("Race State: IN_GARAGE")
-        self.info_label = QLabel("Some info about the race <TODO>") #TODO: add to rcsstatemanager
+        self.info_label = QLabel("Some info about the race will appear here")
         layout.addWidget(self.race_state_label, 0, 0)
         layout.addWidget(self.info_label, 0, 1)
 
@@ -134,18 +135,19 @@ class MainWindow(QtWidgets.QMainWindow):
             race_state_layout.addWidget(btn)
         self.button_sidebar_vBox.addWidget(race_state_button_container)
 
-        rcsstate = RCSStateManager(
-            self.model.active_race,
+        self.buttonController = ButtonStateController(
             race_state_btns[0],
             race_state_btns[1],
             race_state_btns[2],
             race_state_btns[3],
+            race_state_btns[4],
             team_state_btns[0],
             move_to_active_race_button,
-            remove_from_active_race_button
-        )
-        self.model.dataChanged.connect(rcsstate.gridActiveStateReady)
-        self.model.dataChanged.connect(rcsstate.eStopStateReady)
+            remove_from_active_race_button,
+            self.race_state_label,
+            self.info_label
+            )
+        self.model.race_state_change_signal.connect(self.buttonController.race_state_updated)
 
         verticalSpacer = QtWidgets.QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(verticalSpacer, 3, 0, rowSpan=1, columnSpan=3)
@@ -172,8 +174,10 @@ class MainWindow(QtWidgets.QMainWindow):
         red_flag_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_FLAG))
         e_stop_race_button = QPushButton("E-STOP RACE")
         e_stop_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.RED_RED))
+        finish_race_button = QPushButton("FINISH RACE")
+        finish_race_button.clicked.connect(lambda: self.race_state_change_callback(RaceState.IN_GARAGE))
 
-        return [grid_active_race_button, start_race_button, red_flag_race_button, e_stop_race_button]
+        return [grid_active_race_button, start_race_button, red_flag_race_button, e_stop_race_button, finish_race_button]
 
 
     def create_team_state_buttons(self):
@@ -191,7 +195,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.model.team_state_change(self.selectedIndex, state)
 
     def race_state_change_callback(self, state):
-        self.race_state_label.setText(f"Race State: {state}")
         self.model.race_state_change(state)
 
     def move_to_active_race(self):

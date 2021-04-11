@@ -5,16 +5,20 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.Qt import QSortFilterProxyModel
 from race import Racer, RaceState
+from rcsstatemanager import RCSStateManager
 
 
 class RCSModel(QtCore.QAbstractTableModel):
 
     team_state_change_signal = pyqtSignal(str, RaceState) #ip of responder as string, response as RaceState
+    race_state_change_signal = pyqtSignal(RaceState, bool) # new state as RaceState, isReady as bool
 
     def __init__(self, teams_list_file_path):
         super(RCSModel, self).__init__()
         self.active_race = []
         self.standby_race = []
+        self.race_state_manager = RCSStateManager(self.active_race, self.race_state_change_signal)
+        self.dataChanged.connect(self.race_state_manager.racer_data_updated)
         self.teams_list = {}
         self.load_team_list(teams_list_file_path)
 
@@ -101,8 +105,9 @@ class RCSModel(QtCore.QAbstractTableModel):
         self.team_state_change_signal.emit(ip, state)
 
     def race_state_change(self, state):
+        new_state = self.race_state_manager.update_race_state(state)
         for r in self.active_race:
-            r.state = state
+            r.state = new_state
             self.team_state_change_signal.emit(r.ip, state)
         modelTopLeftIndex = self.index(0,0)
         modelBottomRightIndex = self.index(len(self.active_race) - 1, Racer.DATA_SIZE-1)
