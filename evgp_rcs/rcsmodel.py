@@ -50,9 +50,6 @@ class RCSModel(QtCore.QAbstractTableModel):
         if role == Qt.BackgroundRole:
             return self.decideRowColor(index)
 
-        # if role == Qt.ToolTipRole: #SHOWS FULL TEXT ON HOVER
-        #     return self.data(index,role=Qt.DisplayRole)
-
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.active_race) + len(self.standby_race)
 
@@ -93,7 +90,6 @@ class RCSModel(QtCore.QAbstractTableModel):
             ip = self.active_race[tableIdx].ip
 
         else:
-            #TODO: should standby racers be allowed to be in GO states?
             self.standby_race[tableIdx-len(self.active_race)].state = state
             ip = self.standby_race[tableIdx-len(self.active_race)].ip
 
@@ -120,20 +116,15 @@ class RCSModel(QtCore.QAbstractTableModel):
     #returns true or false if anything actually moved
     def move_to_active_race(self, index):
         if index > len(self.active_race) - 1:
-            self.layoutAboutToBeChanged.emit() #TODO: see if this is right
+            self.layoutAboutToBeChanged.emit()
 
-            # if  not self.standby_race[index].is_connected: #TODO: ENABLE AFTER TESTING
-            #     print("Racer not connected!")
-            #     return
             self.move_racer(index - len(self.active_race), self.standby_race, self.active_race)
-            #modelTopLeftIndex = self.index(self.active_race.get_racer_count() - 1,0)
-            #modelBottomRightIndex = self.index(self.active_race.get_racer_count() + self.standby_race.get_racer_count() - 1, Racer.DATA_SIZE)
 
             modelTopLeftIndex = self.index(0,0)
             modelBottomRightIndex = self.index(self.rowCount() - 1, Racer.DATA_SIZE)
             self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
 
-            self.layoutChanged.emit() #TODO: see if this is right
+            self.layoutChanged.emit()
             return True
         else:
             logging.warning("Racer already in the active race.")
@@ -142,17 +133,15 @@ class RCSModel(QtCore.QAbstractTableModel):
     #returns true or false if anything actually moved
     def move_to_standby_race(self, index):
         if index < len(self.active_race):
-            self.layoutAboutToBeChanged.emit() #TODO: see if this is right
+            self.layoutAboutToBeChanged.emit()
 
             self.move_racer(index - len(self.active_race), self.active_race, self.standby_race)
-            #modelTopLeftIndex = self.index(len(self.active_race.get_racer_count() - 1,0)
-            #modelBottomRightIndex = self.index(self.active_race.get_racer_count() + self.standby_race.get_racer_count() - 1, Racer.DATA_SIZE)
 
             modelTopLeftIndex = self.index(0,0)
             modelBottomRightIndex = self.index(self.rowCount() - 1, Racer.DATA_SIZE)
             self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
 
-            self.layoutChanged.emit() #TODO: see if this is right
+            self.layoutChanged.emit()
             return True
         else:
             logging.warning("Racer not in active race.")
@@ -189,7 +178,7 @@ class RCSModel(QtCore.QAbstractTableModel):
                 modelTopLeftIndex = self.index(i, 0)
                 modelBottomRightIndex = self.index(i, Racer.DATA_SIZE-1)
                 self.dataChanged.emit(modelTopLeftIndex, modelBottomRightIndex)
-                logging.error(f"Lost connection to active racer team {self.teams_list[ip]}") #TODO: show UI error in table if in active race
+                logging.error(f"Lost connection to active racer team {self.teams_list[ip]}")
                 return
         for i in range(len(self.standby_race)):
             if self.standby_race[i].ip == ip:
@@ -202,7 +191,6 @@ class RCSModel(QtCore.QAbstractTableModel):
 
     @QtCore.pyqtSlot(str, RaceState)
     def new_response_handler(self, ip, response):
-        #TODO: check speed of this with 15 racers. Could have faster lookup
         for i in range(len(self.active_race)):
             if self.active_race[i].ip == ip:
                 self.active_race[i].last_response = response

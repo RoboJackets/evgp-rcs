@@ -15,13 +15,13 @@ class RaceState(Enum):
 class Racer:
 
     #USED ONLY FOR PYQT DISPLAY
-    DATA_SIZE = 6 #TODO: not this?
+    DATA_SIZE = 6
     IP = 0
     TEAM = 1
     IS_CONNECTED = 2
     STATE = 3
     LAST_RESPONSE = 4
-    ERROR = 5 #TODO: better define by disconnection
+    ERROR = 5
 
     HEADER_LABELS = ["IP", "Team", "Connected", "State", "Last Response", "Error"]
 
@@ -31,7 +31,7 @@ class Racer:
         self.is_connected = False
         self.state = RaceState.IN_GARAGE
         self.last_response = RaceState.IN_GARAGE
-        self.error = None
+        self.error = None #TODO: make use of this
 
     #USED ONLY FOR PYQT DISPLAY
     def index(self, idx):
