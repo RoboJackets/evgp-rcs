@@ -4,96 +4,139 @@ import signal
 import re
 import time
 import select
+import argparse
+import platform
 
-def signal_handler(signal, frame):
-    print('You pressed Ctrl+C!')
-    done = True
-    sock.close()
-    sys.exit(0)
-
-# Create a TCP/IP socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# Connect the socket to the port where the server is listening
-server_address = (socket.gethostname(), 12017)
-print('connecting to %s port %s' % server_address)
-sock.connect(server_address)
+from race import RaceState
 
 
 
-state = "$IN_GARAGE;"#"$GREEN_GREEN;"
+class TCPClient:
 
-start = time.time()
-split = 5
-states = ["$IN_GARAGE;", "$GRID_ACTIVE;", "$GREEN_GREEN;", "$RED_FLAG;", "$RED_RED;"]
-selection = 0
+    START_CHAR = '$'
+    END_CHAR = ';'
 
-msg_parts = ["$", "GREEN_", "GREEN",";", "$", "RED", "_", "RED;", "$GRID_ACTIVE;"]
+    def __init__(self, server_ip, server_port):
+        # Create a TCP/IP socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-leftover_message = ""
+        # Connect the socket to the port where the server is listening
+        server_address = (server_ip, server_port)
+        print('connecting to %s port %s' % server_address)
+        self.sock.connect(server_address)
 
-try:
-    # Send data
-    last_msg = None
-    message = state
-    print(f'sending {message}')
-    sock.sendall(message.encode('utf-8'))
-    while True:
+        self.last_msg = ""
+        self.leftover_message = ""
 
-        data = sock.recv(256)
+    def receive_message(self):
+        data = self.sock .recv(256)
         amount_received = len(data)
         if amount_received > 0:
-            all_message_data = leftover_message + data.decode('utf-8')
+            all_message_data = self.leftover_message + data.decode('utf-8')
             matches = re.findall('\$([^\$\s]+?);', all_message_data) #splits "$something;"" to "something"
-            last_end = max(all_message_data.rfind(";"),0)
-            last_start = max(all_message_data.rfind("$"),0)
+            last_end = max(all_message_data.rfind(self.END_CHAR),0)
+            last_start = max(all_message_data.rfind(self.START_CHAR),0)
             if (last_end > last_start):
-                leftover_message = ""
+                self.leftover_message = ""
             else:
-                leftover_message = all_message_data[last_start:]
+                self.leftover_message = all_message_data[last_start:]
 
             if not matches:
-                print(leftover_message)
-                print(data.decode('utf-8')) #TODO: keep track of data that wasn't matched
+                #print(data.decode('utf-8'))
+                pass
             else:
                 msg = matches[-1]
-                #print(msg)
-                if msg != last_msg:
+                if msg != self.last_msg:
                     print(f"received {msg}")
-                    last_msg = msg
+                    self.last_msg = msg
+                    return msg
 
-        # send test messsages
-        # if time.time() - start > split:
-        #     message = states[selection%len(states)]
-        #     selection += 1
-        #     print(f'sending {message}')
-        #     sock.sendall(message.encode('utf-8'))
-        #     start = time.time()
+        return None
 
+    def send_message(self, msg):
+        if msg is not None:
+            msg = f"{self.START_CHAR}{msg}{self.END_CHAR}"
+            self.sock.sendall(msg.encode('utf-8'))
+            print(f"sent {msg}")
 
-        # send messages in parts
-        # if time.time() - start > split:
-        #     message = msg_parts[selection%len(msg_parts)]
-        #     print(f'sending {message}')
-        #     sock.sendall(message.encode('utf-8'))
-        #     selection += 1
-        #     start = time.time()
-
-        # use 0-4 input to send state message
-        # @Note: Select like this only works on Unix system (not Windows)
-        readable, writable, exceptional = select.select([sys.stdin], [], [], 0)
-        if sys.stdin in readable:
-            line = sys.stdin.readline()
-            if line:
-                try:
-                    num = int(line)
-                    message = states[num%len(states)]
-                    sock.sendall(message.encode('utf-8'))
-                    print(f'sending {message}')
-                except:
-                    pass
+    def close(self):
+        self.sock.close()
 
 
-finally:
-    print("closing socket")
-    sock.close()
+
+def signal_handler(signal, frame):
+    print('You pressed Ctrl+C! Closing TCPClient and exiting.')
+    done = True
+    tcpclient.close()
+    sys.exit(0)
+
+if __name__ == "__main__":
+
+    # TCP Client Example:
+    # well-behaved: Responds with state server requested
+    # interval: Iterates through RaceStates and sends the next one (please prove a --delay)
+    # single-message: Sends the message from the --message argument
+    # interactive: Use 1-5 to select a RaceState to send
+    parser = argparse.ArgumentParser(description='Example TCPClient for EVGP RCS.')
+    parser.add_argument('--type',
+                        default='well-behaved',
+                        const='all',
+                        nargs='?',
+                        choices=['well-behaved', 'interval', 'single-message', 'interactive', 'listen'],
+                        help='Type of client.')
+    parser.add_argument('--delay', type=float, default=0)
+    parser.add_argument('--message', type=str, default="IN_GARAGE")
+    parser.add_argument('--server', type=str, default=socket.gethostname())
+    parser.add_argument('--port', type=int, default=12017)
+
+    args = parser.parse_args()
+    signal.signal(signal.SIGINT, signal_handler)
+
+    states = [e.value for e in RaceState]
+    index = 0
+    interactive_message = "Use 1-5 to send a state.\n" + "\n".join([f"{i+1}: {s}" for i,s in enumerate(states)])
+
+    tcpclient = TCPClient(args.server, args.port)
+
+    if args.type == 'single-message':
+        if args.message:
+            time.sleep(args.delay)
+            tcpclient.send_message(args.message)
+        else:
+            print("No message argument provided")
+        sys.exit(0)
+    elif args.type == "interactive":
+        if platform.system() == 'Windows':
+            print("Sorry, you can't use interactive mode on Windows.")
+        print(interactive_message)
+    else:
+        pass
+
+    while True:
+        msg_from_server = tcpclient.receive_message()
+
+        msg = None
+        if args.type == "well-behaved":
+            msg = msg_from_server
+        elif args.type == "interval":
+            msg = states[index]
+            index = (index + 1) % len(states)
+        elif args.type == "interactive":
+            # use 1-5 input to send state message
+            # @Note: Select for user input only works on Unix system (not Windows)
+            readable, writable, exceptional = select.select([sys.stdin], [], [], 0)
+            if sys.stdin in readable:
+                line = sys.stdin.readline()
+                if line:
+                    try:
+                        num = int(line) - 1
+                        msg = states[num%len(states)]
+                        print(interactive_message)
+                    except:
+                        pass
+        else:
+            pass
+
+        if msg is not None:
+            time.sleep(args.delay)
+            tcpclient.send_message(msg)
