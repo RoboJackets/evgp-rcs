@@ -163,8 +163,11 @@ class MainWindow(QtWidgets.QMainWindow):
         verticalSpacer = QtWidgets.QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(verticalSpacer, 4, 0, rowSpan=1, columnSpan=3)
 
+        self.create_menu_bar()
+
         # wait for start of server
         self.server_wait_label = QLabel("Waiting for TCP Server to start. Please hold on.")
+        self.server_wait_label.setAlignment(Qt.AlignCenter)
         self.setCentralWidget(self.server_wait_label)
         self.start_server()
 
@@ -174,6 +177,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stop_server()
         event.accept()
 
+    def create_menu_bar(self):
+        menuBar = QtWidgets.QMenuBar(self)
+        self.setMenuBar(menuBar)
+        helpMenu = menuBar.addMenu("&Help")
+        self.reset_gui_buttons_actions = QtWidgets.QAction("Reset GUI buttons")
+        self.reset_gui_buttons_actions.triggered.connect(self.buttonController.enable_all_buttons)
+        helpMenu.addAction(self.reset_gui_buttons_actions)
+        self.about_action = QtWidgets.QAction("About")
+        self.about_action.triggered.connect(self.show_about_message)
+        helpMenu.addAction(self.about_action)
+
+    def show_about_message(self):
+        text = "The Electric Vehicle GrandPrix Autonomous Race Control System " \
+        "is brought to you by the RoboJackets at Georgia Tech.<br>" \
+        "Contribute to the RCS at <a href='https://github.com/RoboJackets/evgp-rcs'>https://github.com/RoboJackets/evgp-rcs</a>"
+
+        QMessageBox.question(self, 'About the EVGP Race Control System',
+                            text,
+                            QMessageBox.Ok)
 
     def create_race_state_buttons(self):
         grid_active_race_button = QPushButton("GRID ACTIVE RACE")
