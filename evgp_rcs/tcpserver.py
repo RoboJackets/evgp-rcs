@@ -28,7 +28,7 @@ class TCPServer(QObject):
         self.states = {}
         self.responses = {}
         self.leftover_messages = {}
-        self.connection_to_addr = {} #TODO: may need to run off (addr,port) or handle oddity if car tries to connect twice
+        self.connection_to_addr = {}
         self.whitelist = whitelist
         if self.whitelist is None:
             self.whitelist = []
@@ -99,16 +99,20 @@ class TCPServer(QObject):
                     connection, client_address = s.accept()
                     connection.setblocking(0)
                     if client_address[0] not in self.whitelist:
-                        logging.debug(f"Ignoring unknown connection from {client_address}. Not in whitelist!")
+                        logging.info(f"Ignoring unknown connection from {client_address}. Not in whitelist!")
                         connection.close() # we don't know you!
+                        continue
+                    if client_address[0] in self.states:
+                        logging.info(f"Ignoring double connection from {client_address}. Already connected!")
+                        connection.close() # you are already connected!
                         continue
                     self.connections.append(connection)
                     self.connection_to_addr[connection] = client_address[0]
                     self.states[client_address[0]] = RaceState.IN_GARAGE
                     self.responses[client_address[0]] = RaceState.IN_GARAGE
                     self.leftover_messages[client_address[0]] = ""
-                    logging.debug(f"Accepting new client at {client_address[0]} port {client_address[1]}") #TODO: logging
-                    self.new_connection.emit(client_address[0]) #TODO: handle double IP connections just in case
+                    logging.debug(f"Accepting new client at {client_address[0]} port {client_address[1]}")
+                    self.new_connection.emit(client_address[0])
                 else:
                     try:
                         data = s.recv(1024)
