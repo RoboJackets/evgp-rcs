@@ -48,6 +48,6 @@ class RCSStateManager():
     #returns if racers all report the state given
     def racers_ready(self, state):
         for r in self.racers_list:
-            if r.last_response != state:
+            if r.is_connected and r.last_response != state:
                 return False
         return True
