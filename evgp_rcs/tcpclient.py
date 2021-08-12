@@ -84,10 +84,10 @@ if __name__ == "__main__":
                         nargs='?',
                         choices=['well-behaved', 'interval', 'single-message', 'interactive', 'listen'],
                         help='Type of client.')
-    parser.add_argument('--delay', type=float, default=0)
-    parser.add_argument('--message', type=str, default="IN_GARAGE")
-    parser.add_argument('--server', type=str, default=socket.gethostname())
-    parser.add_argument('--port', type=int, default=12017)
+    parser.add_argument('--delay', type=float, default=0, help='Delay between messages')
+    parser.add_argument('--message', type=str, default="IN_GARAGE", help='Message sent (only when type=single-message)')
+    parser.add_argument('--server', type=str, default=socket.gethostname(), help='RCS Server if not on local machine')
+    parser.add_argument('--port', type=int, default=12017, help='Port if not RCS default')
 
     args = parser.parse_args()
     signal.signal(signal.SIGINT, signal_handler)
