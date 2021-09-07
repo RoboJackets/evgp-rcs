@@ -11,6 +11,13 @@ class RaceState(Enum):
     def __str__(self):
         return str(self.value)
 
+    def __eq__(self, other):
+        if isinstance(other, RaceState):
+            return self.value == other.value
+        elif isinstance(other, str):
+            return self.value == other
+        return False
+
 
 class Racer:
 
