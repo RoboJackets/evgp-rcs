@@ -5,6 +5,7 @@ import sys
 import re
 import time
 import logging
+import time
 from race import RaceState
 
 
@@ -128,7 +129,6 @@ class TCPServer(QObject):
                             pass
 
             for s in writable:
-                #TODO: some time processing so we don't send repeat signal too fast
                 try:
                     (addr, port) = s.getpeername()
                     state = self.states[addr]
@@ -136,6 +136,8 @@ class TCPServer(QObject):
                     s.send(msg.encode('utf-8'))
                 except OSError:
                     self.remove_lost_client(s)
+            #maybe make this configurable?
+            time.sleep(0.01)
         self.close_server()
 
 
