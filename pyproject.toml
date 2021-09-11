@@ -2,7 +2,7 @@
 name = "evgp-rcs"
 version = "0.1.0"
 description = ""
-authors = ["Brian Cochran Github @btdubs"]
+authors = ["Brian Cochran <placeholder@email.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
