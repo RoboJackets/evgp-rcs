@@ -247,8 +247,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.is_server_started = True
             port = 12017
             server_backlog = 10
+            send_hz = 10
             ip_list = self.model.teams_list.keys()
-            self.server = TCPServer(port, server_backlog, whitelist=ip_list)
+            self.server = TCPServer(port, server_backlog, whitelist=ip_list, hz=send_hz)
             self.server.new_connection.connect(self.model.new_connection_handler)
             self.server.lost_connection.connect(self.model.lost_connection_handler)
             self.server.new_response.connect(self.model.new_response_handler)

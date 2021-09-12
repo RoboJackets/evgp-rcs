@@ -1,7 +1,6 @@
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import socket
 import select
-import sys
 import re
 import time
 import logging
@@ -19,7 +18,7 @@ class TCPServer(QObject):
 
     server_ready = pyqtSignal(bool)
 
-    def __init__(self, server_port, server_backlog=10, whitelist=None, parent=None):
+    def __init__(self, server_port, server_backlog=10, whitelist=None, parent=None, hz=10):
         QObject.__init__(self, parent=parent)
         self.server_port = server_port
         self.server_backlog = server_backlog
@@ -32,6 +31,10 @@ class TCPServer(QObject):
         self.whitelist = whitelist
         if self.whitelist is None:
             self.whitelist = []
+        self.hz = hz #message send rate
+        self.time_between_messages = 1.0 / self.hz
+        self.last_message_time = 0.0
+
 
     def stop(self):
         logging.info("Requesting server shutdown")
@@ -126,16 +129,19 @@ class TCPServer(QObject):
                             writable.remove(s)
                         except ValueError:
                             pass
-
-            for s in writable:
-                #TODO: some time processing so we don't send repeat signal too fast
-                try:
-                    (addr, port) = s.getpeername()
-                    state = self.states[addr]
-                    msg = self.START_CHAR + str(state) + self.END_CHAR
-                    s.send(msg.encode('utf-8'))
-                except OSError:
-                    self.remove_lost_client(s)
+            
+            current_time = time.time()
+            elapsed_time = current_time - self.last_message_time
+            if elapsed_time >= self.time_between_messages:
+                for s in writable:
+                    try:
+                        (addr, port) = s.getpeername()
+                        state = self.states[addr]
+                        msg = self.START_CHAR + str(state) + self.END_CHAR
+                        s.send(msg.encode('utf-8'))
+                    except OSError:
+                        self.remove_lost_client(s)
+                self.last_message_time = current_time
         self.close_server()
 
 

@@ -28,6 +28,8 @@ class TCPClient:
         self.last_msg = ""
         self.leftover_message = ""
 
+        self.last_receive_time = time.time()
+
     def receive_message(self):
         data = self.sock .recv(256)
         amount_received = len(data)
@@ -45,6 +47,9 @@ class TCPClient:
                 #print(data.decode('utf-8'))
                 pass
             else:
+                current_time = time.time()
+                self.time_between_messages = current_time - self.last_receive_time
+                self.last_receive_time = current_time
                 msg = matches[-1]
                 if msg != self.last_msg:
                     print(f"received {msg}")
@@ -58,6 +63,9 @@ class TCPClient:
             msg = f"{self.START_CHAR}{msg}{self.END_CHAR}"
             self.sock.sendall(msg.encode('utf-8'))
             print(f"sent {msg}")
+
+    def get_receive_hz(self):
+        return 1.0 / self.time_between_messages
 
     def close(self):
         self.sock.close()
