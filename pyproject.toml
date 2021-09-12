@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "evgp-rcs"
 version = "0.1.0"
-description = ""
-authors = ["Brian Cochran Github @btdubs"]
+description = "Race management controller for the EVGP autonomous competition."
+authors = ["Brian Cochran <hello@robojackets.org>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
